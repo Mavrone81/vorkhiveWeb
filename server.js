@@ -1,9 +1,12 @@
-const express = require('express');
-const path = require('path');
+import express from 'express';
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
 const app = express();
 const port = 4998;
-
-// Explicitly bind to '0.0.0.0' to allow external traffic and avoid hostname issues
 const host = '0.0.0.0'; 
 
 app.use(express.static(path.join(__dirname, 'dist')));
