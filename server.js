@@ -103,7 +103,7 @@ app.post('/api/create-checkout-session', async (req, res) => {
 });
 
 // Handle SPA routing: ALWAYS serve index.html for non-API routes
-app.get('*', (req, res) => {
+app.get(/(.*)/, (req, res) => {
     res.sendFile(path.join(__dirname, 'dist', 'index.html'));
 });
 
