@@ -58,7 +58,7 @@ export default function Layout({ children }) {
 
                     {/* Mobile Menu Button */}
                     <button
-                        className="md:hidden p-2 ml-auto"
+                        className="mobile-menu-btn"
                         onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
                     >
                         {mobileMenuOpen ? (
@@ -70,41 +70,39 @@ export default function Layout({ children }) {
                 </div>
 
                 {/* Mobile Menu */}
-                {mobileMenuOpen && (
-                    <div className="md:hidden bg-white border-t border-slate-100 absolute w-full left-0 shadow-md" style={{ top: '100%', zIndex: 100 }}>
-                        <div className="container py-4 flex flex-col gap-2">
-                            {navLinks.map((link) => (
-                                link.isHash ? (
-                                    <a
-                                        key={link.label}
-                                        href={link.href}
-                                        className="block text-slate-700 hover:text-indigo-600 font-medium py-2"
-                                        onClick={() => setMobileMenuOpen(false)}
-                                    >
-                                        {link.label}
-                                    </a>
-                                ) : (
-                                    <Link
-                                        key={link.label}
-                                        to={link.href}
-                                        className="block text-slate-700 hover:text-indigo-600 font-medium py-2"
-                                        onClick={() => setMobileMenuOpen(false)}
-                                    >
-                                        {link.label}
-                                    </Link>
-                                )
-                            ))}
-                            <div className="pt-3 border-t border-slate-100 flex flex-col gap-3 mt-2">
-                                <a href="https://app.vorkhive.com" className="btn btn-outline" style={{ display: 'block', width: '100%' }}>
-                                    Login
+                <div className={`mobile-menu ${mobileMenuOpen ? 'open' : ''}`}>
+                    <div className="container mobile-menu-content">
+                        {navLinks.map((link) => (
+                            link.isHash ? (
+                                <a
+                                    key={link.label}
+                                    href={link.href}
+                                    className="mobile-nav-link"
+                                    onClick={() => setMobileMenuOpen(false)}
+                                >
+                                    {link.label}
                                 </a>
-                                <Link to="/contact" className="btn btn-primary" style={{ display: 'block', width: '100%' }}>
-                                    Start Free Trial
+                            ) : (
+                                <Link
+                                    key={link.label}
+                                    to={link.href}
+                                    className="mobile-nav-link"
+                                    onClick={() => setMobileMenuOpen(false)}
+                                >
+                                    {link.label}
                                 </Link>
-                            </div>
+                            )
+                        ))}
+                        <div className="mobile-nav-actions">
+                            <a href="https://app.vorkhive.com" className="btn btn-outline" style={{ display: 'block', width: '100%', textAlign: 'center' }}>
+                                Login
+                            </a>
+                            <Link to="/contact" className="btn btn-primary" style={{ display: 'block', width: '100%', textAlign: 'center' }}>
+                                Start Free Trial
+                            </Link>
                         </div>
                     </div>
-                )}
+                </div>
             </nav>
 
             {/* Page Content */}
