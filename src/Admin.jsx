@@ -111,20 +111,7 @@ function Admin() {
     }
 
     return (
-        <div className="app" style={{ backgroundColor: '#F8FAFC', minHeight: '100vh' }}>
-            {/* Admin Navbar */}
-            <nav className="navbar" style={{ background: 'white', borderBottom: '1px solid var(--border)' }}>
-                <div className="container nav-content" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <div className="logo">
-                        <img src={logoImg} alt="Vorkhive" style={{ height: '32px' }} />
-                        <span style={{ color: 'var(--primary)', marginLeft: '0.5rem', fontSize: '1.25rem' }}>Admin Dashboard</span>
-                    </div>
-                    <div className="nav-actions">
-                        <Link to="/" className="btn btn-outline">Back to Website</Link>
-                    </div>
-                </div>
-            </nav>
-
+        <div className="app" style={{ backgroundColor: '#F8FAFC', minHeight: '100vh', paddingTop: '5rem' }}>
             <main className="container" style={{ padding: '3rem 1.5rem' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
                     <div>

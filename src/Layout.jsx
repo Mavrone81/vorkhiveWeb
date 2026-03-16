@@ -17,10 +17,10 @@ export default function Layout({ children }) {
     }, []);
 
     const navLinks = [
-        { label: "Features", href: "#features" },
-        { label: "Compliance", href: "#compliance" },
-        { label: "Pricing", href: "#pricing" },
-        { label: "Contact", href: "#contact" }
+        { label: "Features", href: "/#features", isHash: true },
+        { label: "How It Works", href: "/#how-it-works", isHash: true },
+        { label: "Pricing", href: "/#pricing", isHash: true },
+        { label: "Contact", href: "/contact", isHash: false }
     ];
 
     return (
@@ -47,28 +47,36 @@ export default function Layout({ children }) {
                         {/* Desktop Nav */}
                         <div className="hidden md:flex items-center gap-8">
                             {navLinks.map((link) => (
-                                <a
-                                    key={link.label}
-                                    href={link.href}
-                                    className={`text-sm font-medium transition-colors ${isScrolled ? 'text-slate-600 hover:text-slate-900' : 'text-white/80 hover:text-white'
-                                        }`}
-                                >
-                                    {link.label}
-                                </a>
+                                link.isHash ? (
+                                    <a
+                                        key={link.label}
+                                        href={link.href}
+                                        className={`text-sm font-medium transition-colors ${isScrolled ? 'text-slate-600 hover:text-slate-900' : 'text-white/80 hover:text-white'
+                                            }`}
+                                    >
+                                        {link.label}
+                                    </a>
+                                ) : (
+                                    <Link
+                                        key={link.label}
+                                        to={link.href}
+                                        className={`text-sm font-medium transition-colors ${isScrolled ? 'text-slate-600 hover:text-slate-900' : 'text-white/80 hover:text-white'
+                                            }`}
+                                    >
+                                        {link.label}
+                                    </Link>
+                                )
                             ))}
                         </div>
 
                         {/* CTA Buttons */}
                         <div className="hidden md:flex items-center gap-3">
-                            <Button
-                                variant="ghost"
-                                className={isScrolled ? 'text-slate-700' : 'text-white hover:bg-white/10'}
-                            >
+                            <a href="https://app.vorkhive.com" className="btn btn-outline">
                                 Login
-                            </Button>
-                            <Button className="bg-indigo-600 hover:bg-indigo-700 text-white">
-                                Book Demo
-                            </Button>
+                            </a>
+                            <Link to="/contact" className="btn btn-primary">
+                                Start Free Trial
+                            </Link>
                         </div>
 
                         {/* Mobile Menu Button */}
@@ -90,22 +98,33 @@ export default function Layout({ children }) {
                     <div className="md:hidden bg-white border-t border-slate-100">
                         <div className="container mx-auto px-6 py-4 space-y-3">
                             {navLinks.map((link) => (
-                                <a
-                                    key={link.label}
-                                    href={link.href}
-                                    className="block text-slate-700 hover:text-indigo-600 font-medium py-2"
-                                    onClick={() => setMobileMenuOpen(false)}
-                                >
-                                    {link.label}
-                                </a>
+                                link.isHash ? (
+                                    <a
+                                        key={link.label}
+                                        href={link.href}
+                                        className="block text-slate-700 hover:text-indigo-600 font-medium py-2"
+                                        onClick={() => setMobileMenuOpen(false)}
+                                    >
+                                        {link.label}
+                                    </a>
+                                ) : (
+                                    <Link
+                                        key={link.label}
+                                        to={link.href}
+                                        className="block text-slate-700 hover:text-indigo-600 font-medium py-2"
+                                        onClick={() => setMobileMenuOpen(false)}
+                                    >
+                                        {link.label}
+                                    </Link>
+                                )
                             ))}
                             <div className="pt-3 border-t border-slate-100 space-y-2">
-                                <Button variant="outline" className="w-full">
+                                <a href="https://app.vorkhive.com" className="btn btn-outline" style={{ display: 'block', width: '100%' }}>
                                     Login
-                                </Button>
-                                <Button className="w-full bg-indigo-600 hover:bg-indigo-700">
-                                    Book Demo
-                                </Button>
+                                </a>
+                                <Link to="/contact" className="btn btn-primary" style={{ display: 'block', width: '100%' }}>
+                                    Start Free Trial
+                                </Link>
                             </div>
                         </div>
                     </div>
