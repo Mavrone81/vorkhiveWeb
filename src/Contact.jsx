@@ -31,7 +31,7 @@ function Contact() {
     const handleSubmit = async (e) => {
         e.preventDefault();
         try {
-            const response = await fetch('http://localhost:3001/api/contact', {
+            const response = await fetch('/api/contact', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -42,7 +42,7 @@ function Contact() {
             if (response.ok) {
                 try {
                     // Try to redirect to Xendit
-                    const sessionResponse = await fetch('http://localhost:3001/api/create-checkout-session', {
+                    const sessionResponse = await fetch('/api/create-checkout-session', {
                         method: 'POST',
                         headers: {
                             'Content-Type': 'application/json',

@@ -20,7 +20,7 @@ function Admin() {
     const fetchContacts = async () => {
         try {
             setLoading(true);
-            const response = await fetch('http://localhost:3001/api/contacts');
+            const response = await fetch('/api/contacts');
             if (!response.ok) {
                 throw new Error('Failed to fetch contacts');
             }
