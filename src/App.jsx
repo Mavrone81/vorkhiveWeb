@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import logoImg from './assets/logo.png';
-import dashImg from './assets/dash.png';
+import dashImg from './assets/dash.PNG';
 
 function App() {
   const [scrolled, setScrolled] = useState(false);
