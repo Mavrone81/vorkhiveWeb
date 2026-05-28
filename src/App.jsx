@@ -269,7 +269,7 @@ function App() {
             <div className="pricing-card">
               <div className="pricing-header">
                 <h3>Starter</h3>
-                <div className="price">$0</div>
+                <div className="price">$5</div>
                 <div className="price-period">per user / month</div>
               </div>
               <p style={{ textAlign: 'center', color: 'var(--text-light)', marginBottom: '2rem' }}>Perfect for individuals and small teams getting started.</p>
@@ -286,7 +286,7 @@ function App() {
               <div className="popular-badge">Most Popular</div>
               <div className="pricing-header">
                 <h3>Pro</h3>
-                <div className="price">$29</div>
+                <div className="price">$9</div>
                 <div className="price-period">per user / month</div>
               </div>
               <p style={{ textAlign: 'center', color: 'var(--text-light)', marginBottom: '2rem' }}>For growing teams that need robust automation.</p>
@@ -303,7 +303,7 @@ function App() {
             <div className="pricing-card">
               <div className="pricing-header">
                 <h3>Enterprise</h3>
-                <div className="price">$99</div>
+                <div className="price">$15</div>
                 <div className="price-period">per user / month</div>
               </div>
               <p style={{ textAlign: 'center', color: 'var(--text-light)', marginBottom: '2rem' }}>Advanced security and control for large organizations.</p>
