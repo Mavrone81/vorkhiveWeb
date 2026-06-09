@@ -12,6 +12,13 @@ services:
     restart: unless-stopped
     env_file:
       - .env
+    environment:
+      # Reach the host's Ollama (chat bot LLM) from inside the container.
+      - OLLAMA_URL=http://host.docker.internal:11434
+      - OLLAMA_MODEL=qwen2.5:3b
+      - OLLAMA_KEEPALIVE=15m
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     ports:
       # Bind to loopback only; nginx terminates TLS and proxies vorkhive.com here.
       - "127.0.0.1:4998:4998"

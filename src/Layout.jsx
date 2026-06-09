@@ -4,6 +4,7 @@ import { createPageUrl } from "./utils";
 import { Button } from "./components/ui/button";
 import { Menu, X } from "lucide-react";
 import logoImg from './assets/logo.png';
+import ChatWidget from './components/ChatWidget';
 
 export default function Layout({ children }) {
     const [isScrolled, setIsScrolled] = useState(false);
@@ -109,6 +110,9 @@ export default function Layout({ children }) {
             <main>
                 {children}
             </main>
+
+            {/* Sales & support chat bot */}
+            <ChatWidget />
         </div>
     );
 }
