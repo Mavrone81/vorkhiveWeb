@@ -6,13 +6,20 @@ import { fileURLToPath } from 'url';
 import { Xendit } from 'xendit-node';
 import nodemailer from 'nodemailer';
 
+// Load .env into process.env if present (no-op when real env vars are set, e.g. in prod)
+try {
+    process.loadEnvFile();
+} catch {
+    // .env not found — rely on environment variables provided by the host
+}
+
 const mailer = nodemailer.createTransport({
-    host: 'smtp.titan.email',
-    port: 587,
+    host: process.env.SMTP_HOST || 'smtp.titan.email',
+    port: Number(process.env.SMTP_PORT) || 587,
     secure: false,
     auth: {
-        user: 'Dev@vorkhive.com',
-        pass: '***REMOVED***'
+        user: process.env.SMTP_USER,
+        pass: process.env.SMTP_PASS
     }
 });
 
