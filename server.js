@@ -24,7 +24,7 @@ const mailer = nodemailer.createTransport({
 });
 
 const xenditClient = new Xendit({
-    secretKey: 'xnd_development_MockXenditSecretKeyForVorkhiveDemo123456789'
+    secretKey: process.env.XENDIT_SECRET_KEY
 });
 
 const __filename = fileURLToPath(import.meta.url);
