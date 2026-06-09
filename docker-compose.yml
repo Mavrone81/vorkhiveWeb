@@ -1,0 +1,19 @@
+# Single-service deploy for the Vorkhive marketing site (Express + built Vite SPA).
+# Built from the local Dockerfile; fronted by nginx (vorkhive.com -> 127.0.0.1:4998).
+#
+# Persistent contact-form data lives in ./data/contacts.json (git-ignored, bind-mounted)
+# so image rebuilds and `git reset --hard origin/main` never overwrite submissions.
+# Secrets come from .env (git-ignored). Neither is ever touched by a deploy.
+services:
+  app:
+    build: .
+    image: vorkhive-website
+    container_name: vorkhive-website
+    restart: unless-stopped
+    env_file:
+      - .env
+    ports:
+      # Bind to loopback only; nginx terminates TLS and proxies vorkhive.com here.
+      - "127.0.0.1:4998:4998"
+    volumes:
+      - ./data/contacts.json:/app/contacts.json

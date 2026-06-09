@@ -17,6 +17,10 @@ dist-ssr
 .env.*
 !.env.example
 
+# Runtime contact-form data (server-managed, persistent; see contacts.example.json)
+/contacts.json
+/data/
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
