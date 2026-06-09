@@ -13,6 +13,7 @@ function Contact() {
     });
     const [scrolled, setScrolled] = useState(false);
     const [submitted, setSubmitted] = useState(false);
+    const [loading, setLoading] = useState(false);
 
     useEffect(() => {
         const handleScroll = () => {
@@ -30,6 +31,8 @@ function Contact() {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
+        if (loading) return;
+        setLoading(true);
         try {
             const response = await fetch('/api/contact', {
                 method: 'POST',
@@ -40,38 +43,14 @@ function Contact() {
             });
 
             if (response.ok) {
-                try {
-                    // Try to redirect to Xendit
-                    const sessionResponse = await fetch('/api/create-checkout-session', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                        },
-                        body: JSON.stringify(formData),
-                    });
-
-                    if (!sessionResponse.ok) {
-                        throw new Error('Xendit API keys are mock keys, bypassing to success page for demo purposes.');
-                    }
-
-                    const session = await sessionResponse.json();
-
-                    if (session.url) {
-                        window.location.href = session.url;
-                    } else {
-                        throw new Error('No Xendit invoice URL returned.');
-                    }
-
-                } catch (e) {
-                    console.warn(e.message);
-                    // Fallback to directly show success page since this is a demo without real Xendit keys configured yet
-                    navigate('/success');
-                }
+                setSubmitted(true);
             } else {
                 console.error('Failed to submit form');
+                setLoading(false);
             }
         } catch (error) {
             console.error('Error submitting form:', error);
+            setLoading(false);
         }
     };
 
@@ -179,8 +158,8 @@ function Contact() {
                                         ></textarea>
                                     </div>
 
-                                    <button type="submit" className="btn btn-primary btn-lg" style={{ marginTop: '1rem', width: '100%' }}>
-                                        Request Free Trial
+                                    <button type="submit" className="btn btn-primary btn-lg" style={{ marginTop: '1rem', width: '100%' }} disabled={loading}>
+                                        {loading ? 'Submitting...' : 'Request Free Trial'}
                                     </button>
                                     <p style={{ textAlign: 'center', fontSize: '0.875rem', color: 'var(--text-light)', margin: 0 }}>
                                         By submitting this form, you agree to our Terms of Service and Privacy Policy.

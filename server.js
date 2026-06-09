@@ -4,6 +4,17 @@ import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { Xendit } from 'xendit-node';
+import nodemailer from 'nodemailer';
+
+const mailer = nodemailer.createTransport({
+    host: 'smtp.titan.email',
+    port: 587,
+    secure: false,
+    auth: {
+        user: 'Dev@vorkhive.com',
+        pass: '***REMOVED***'
+    }
+});
 
 const xenditClient = new Xendit({
     secretKey: 'xnd_development_MockXenditSecretKeyForVorkhiveDemo123456789'
@@ -30,7 +41,7 @@ if (!fs.existsSync(DATA_FILE)) {
 
 // ... rest of the API routes ...
 
-app.post('/api/contact', (req, res) => {
+app.post('/api/contact', async (req, res) => {
     try {
         const newContact = {
             id: Date.now().toString(),
@@ -49,6 +60,17 @@ app.post('/api/contact', (req, res) => {
         fs.writeFileSync(DATA_FILE, JSON.stringify(contacts, null, 2));
 
         console.log('New contact saved:', newContact.email);
+
+        const { name, email, company, employees, message } = newContact;
+        await mailer.sendMail({
+            from: '"Vorkhive Website" <Dev@vorkhive.com>',
+            to: 'samuel@vorkhive.com, enquires@vorkhive.com',
+            subject: `New Free Trial Request from ${name} (${company})`,
+            text: `New free trial request received.\n\nName: ${name}\nEmail: ${email}\nCompany: ${company}\nCompany Size: ${employees || 'Not specified'}\nMessage:\n${message || 'None'}\n\nSubmitted: ${newContact.timestamp}`,
+            html: `<h2>New Free Trial Request</h2><table style="border-collapse:collapse;width:100%"><tr><td style="padding:8px;border:1px solid #ddd"><strong>Name</strong></td><td style="padding:8px;border:1px solid #ddd">${name}</td></tr><tr><td style="padding:8px;border:1px solid #ddd"><strong>Email</strong></td><td style="padding:8px;border:1px solid #ddd">${email}</td></tr><tr><td style="padding:8px;border:1px solid #ddd"><strong>Company</strong></td><td style="padding:8px;border:1px solid #ddd">${company}</td></tr><tr><td style="padding:8px;border:1px solid #ddd"><strong>Company Size</strong></td><td style="padding:8px;border:1px solid #ddd">${employees || 'Not specified'}</td></tr><tr><td style="padding:8px;border:1px solid #ddd"><strong>Message</strong></td><td style="padding:8px;border:1px solid #ddd">${message || 'None'}</td></tr><tr><td style="padding:8px;border:1px solid #ddd"><strong>Submitted</strong></td><td style="padding:8px;border:1px solid #ddd">${newContact.timestamp}</td></tr></table>`
+        });
+        console.log('Notification email sent to samuel@vorkhive.com, enquires@vorkhive.com');
+
         res.status(201).json({ message: 'Contact saved successfully', id: newContact.id });
     } catch (error) {
         console.error('Error saving contact:', error);

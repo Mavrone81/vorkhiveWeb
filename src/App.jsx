@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import logoImg from './assets/logo.png';
-import dashImg from './assets/dash.PNG';
+import dashImg from './assets/hero-dashboard.png';
+import workflowImg from './assets/workflow-screenshot.png';
 
 function App() {
   const [scrolled, setScrolled] = useState(false);
@@ -80,7 +81,7 @@ function App() {
       <section className="solution">
         <div className="container solution-content">
           <div className="solution-image">
-            <img src="https://images.unsplash.com/photo-1551288049-bebda4e38f71?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80" alt="Dashboard data" style={{ borderRadius: '0.75rem' }} />
+            <img src={workflowImg} alt="Vorkhive Command Centre Dashboard" style={{ borderRadius: '0.75rem', width: '100%', height: 'auto' }} />
             <div className="solution-stat">
               <div className="solution-stat-value">40%</div>
               <div className="solution-stat-label">Average time saved</div>
