@@ -1,7 +1,29 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import './redesign.css';
 import { useContent } from './content/ContentContext.jsx';
 import { SiteHeader, SiteFooter, Check, CtaButton } from './pages/Shell.jsx';
+
+// Live pricing is served by the HRMS control plane (single source of truth,
+// edited in the platform console). Falls back to the static content if the
+// fetch fails, so the page never renders empty.
+const PRICING_API = 'https://app.vorkhive.com/api/pricing';
+function toMarketingPlan(p) {
+  let period = p.unit || ' /user / mo';
+  if (period && period[0] !== ' ') period = ' ' + period;
+  return {
+    name: p.name, desc: p.tagline || '', price: p.price, period,
+    featured: !!p.popular, badge: p.popular ? 'Most popular' : '',
+    bullets: Array.isArray(p.features) ? p.features : [],
+    cta: p.contact ? 'Contact sales' : (String(p.id) === 'growth' ? 'Start 14-day trial' : 'Start free'),
+    ctaTo: p.contact ? 'contact' : 'register',
+  };
+}
+function costAnswer(plans) {
+  const starter = plans.find((p) => /starter/i.test(p.name)) || plans[0];
+  const growth = plans.find((p) => p.popular) || plans[1] || starter;
+  const ent = plans.find((p) => p.contact) || plans[plans.length - 1] || growth;
+  return `Vorkhive starts at ${starter.price} per user per month (${starter.name}). The ${growth.name} plan is ${growth.price} per user per month and includes full payroll with CPF; ${ent.name} is ${ent.price} per user per month.`;
+}
 
 const Bell = () => (
   <svg className="bell" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9" /><path d="M13.7 21a2 2 0 01-3.4 0" /></svg>
@@ -10,6 +32,21 @@ const Bell = () => (
 export default function App() {
   const c = useContent();
   const { hero, logos, intro, problem, pillars, features, metrics, steps, testimonials, pricing, faq, finalCta } = c;
+
+  // Pull live pricing from the app; fall back to static content on any failure.
+  const [apiPlans, setApiPlans] = useState(null);
+  useEffect(() => {
+    let alive = true;
+    fetch(PRICING_API)
+      .then((r) => r.json())
+      .then((d) => { if (alive && d && Array.isArray(d.plans) && d.plans.length) setApiPlans(d.plans); })
+      .catch(() => {});
+    return () => { alive = false; };
+  }, []);
+  const effectivePlans = apiPlans ? apiPlans.map(toMarketingPlan) : pricing.plans;
+  const effectiveFaqItems = apiPlans
+    ? faq.items.map((it) => (/how much/i.test(it.q || '') ? { ...it, a: costAnswer(apiPlans) } : it))
+    : faq.items;
 
   useEffect(() => {
     const io = new IntersectionObserver((entries) => {
@@ -233,7 +270,7 @@ export default function App() {
               <p>{pricing.sub}</p>
             </div>
             <div className="pricing-grid">
-              {pricing.plans.map((p, i) => (
+              {effectivePlans.map((p, i) => (
                 <article className={`price reveal${p.featured ? ' feat' : ''}`} key={i}>
                   {p.badge ? <div className="badge">{p.badge}</div> : null}
                   <h3 className="pname">{p.name}</h3>
@@ -256,7 +293,7 @@ export default function App() {
               <p>{faq.sub}</p>
             </div>
             <div className="faq-list reveal">
-              {faq.items.map((f, i) => (
+              {effectiveFaqItems.map((f, i) => (
                 <details className="faq" key={i}><summary>{f.q}</summary><div className="fa">{f.a}</div></details>
               ))}
             </div>
