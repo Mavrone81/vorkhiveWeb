@@ -99,8 +99,8 @@ export const defaultContent = {
     sub: "One platform for leave, claims, attendance and payroll — for less than you'd pay for any one of them.",
     plans: [
       { name: 'Starter', desc: 'For small teams putting HR on autopilot.', price: 'S$5', period: ' /user / mo', featured: false, badge: '', bullets: ['Up to 5 users', 'Leave & staff directory', 'Claims & attendance', 'Community support'], cta: 'Start free', ctaTo: 'register' },
-      { name: 'Growth', desc: 'For growing teams that need payroll & compliance.', price: 'S$9', period: ' /user / mo', featured: true, badge: 'Most popular', bullets: ['Unlimited users', 'Full payroll with CPF', 'Digital payslips & IRAS export', 'Training & appraisals', 'Priority support'], cta: 'Start 14-day trial', ctaTo: 'register' },
-      { name: 'Enterprise', desc: 'Advanced security and control for larger organizations.', price: 'S$15', period: ' /user / mo', featured: false, badge: '', bullets: ['Everything in Growth', 'Single Sign-On (SSO)', 'Dedicated success manager', 'Full API access'], cta: 'Contact sales', ctaTo: 'contact' },
+      { name: 'Growth', desc: 'For growing teams that need payroll & compliance.', price: 'S$6', period: ' /user / mo', featured: true, badge: 'Most popular', bullets: ['Unlimited users', 'Full payroll with CPF', 'Digital payslips & IRAS export', 'Training & appraisals', 'Priority support'], cta: 'Start 14-day trial', ctaTo: 'register' },
+      { name: 'Enterprise', desc: 'Advanced security and control for larger organizations.', price: 'S$12', period: ' /user / mo', featured: false, badge: '', bullets: ['Everything in Growth', 'Single Sign-On (SSO)', 'Dedicated success manager', 'Full API access'], cta: 'Contact sales', ctaTo: 'contact' },
     ],
   },
   faq: {
@@ -112,7 +112,7 @@ export const defaultContent = {
       { q: 'What HR tasks can employees do themselves?', a: 'Through self-service, employees apply for leave, submit claims, view payslips, clock attendance, complete training and update their profile — all from one dashboard.' },
       { q: 'How long does it take to set up Vorkhive?', a: 'Most teams are live within a day. You import your staff directory, set leave entitlements and run your first CPF-compliant payroll the same week.' },
       { q: 'Does Vorkhive calculate CPF automatically?', a: 'Yes. Vorkhive calculates employer and employee CPF contributions automatically on every payroll run and produces digital payslips ready for IRAS filing.' },
-      { q: 'How much does Vorkhive cost?', a: 'Vorkhive starts at S$5 per user per month (Starter). The Growth plan is S$9 per user per month and includes full payroll with CPF; Enterprise is S$15 per user per month.' },
+      { q: 'How much does Vorkhive cost?', a: 'Vorkhive starts at S$5 per user per month (Starter). The Growth plan is S$6 per user per month and includes full payroll with CPF; Enterprise is S$12 per user per month.' },
     ],
   },
   finalCta: {

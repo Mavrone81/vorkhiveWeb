@@ -682,6 +682,16 @@ const ROUTE_SEO = {
         description: 'Pick a date and time for a live Vorkhive HRMS demo. We confirm by email with a calendar invite. Singapore time.',
         canonical: 'https://vorkhive.com/book',
     },
+    '/terms': {
+        title: 'Terms of Service | Vorkhive',
+        description: 'The terms governing your use of the Vorkhive website and HRMS platform.',
+        canonical: 'https://vorkhive.com/terms',
+    },
+    '/privacy': {
+        title: 'Privacy Policy | Vorkhive',
+        description: 'How Vorkhive collects, uses and protects personal data, in line with Singapore PDPA.',
+        canonical: 'https://vorkhive.com/privacy',
+    },
     '/cpf-payroll': {
         title: 'CPF Payroll Software — Automatic CPF Calculation | Vorkhive',
         description: 'CPF payroll software that calculates employer and employee CPF automatically on every run, with compliant payslips and IRAS-ready (IR8A) reporting.',

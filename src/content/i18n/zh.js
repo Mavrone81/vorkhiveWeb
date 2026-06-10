@@ -82,8 +82,8 @@ export default {
     sub: '一个平台涵盖休假、报销、考勤与薪资——花费比单独购买其中任何一项还低。',
     plans: [
       { name: 'Starter', desc: '让小团队的人力工作自动运转。', price: 'S$5', period: ' /用户 / 月', featured: false, badge: '', bullets: ['最多 5 名用户', '休假与员工通讯录', '报销与考勤', '社区支持'], cta: '免费开始', ctaTo: 'register' },
-      { name: 'Growth', desc: '为需要薪资与合规的成长型团队而设。', price: 'S$9', period: ' /用户 / 月', featured: true, badge: '最受欢迎', bullets: ['无限用户', '含公积金的完整薪资', '电子工资单与税务局导出', '培训与绩效', '优先支持'], cta: '开始 14 天试用', ctaTo: 'register' },
-      { name: 'Enterprise', desc: '为较大型机构提供进阶安全与管控。', price: 'S$15', period: ' /用户 / 月', featured: false, badge: '', bullets: ['包含 Growth 的全部功能', '单点登录（SSO）', '专属客户成功经理', '完整 API 访问'], cta: '联系销售', ctaTo: 'contact' },
+      { name: 'Growth', desc: '为需要薪资与合规的成长型团队而设。', price: 'S$6', period: ' /用户 / 月', featured: true, badge: '最受欢迎', bullets: ['无限用户', '含公积金的完整薪资', '电子工资单与税务局导出', '培训与绩效', '优先支持'], cta: '开始 14 天试用', ctaTo: 'register' },
+      { name: 'Enterprise', desc: '为较大型机构提供进阶安全与管控。', price: 'S$12', period: ' /用户 / 月', featured: false, badge: '', bullets: ['包含 Growth 的全部功能', '单点登录（SSO）', '专属客户成功经理', '完整 API 访问'], cta: '联系销售', ctaTo: 'contact' },
     ],
   },
   faq: {
@@ -95,7 +95,7 @@ export default {
       { q: '员工可以自行完成哪些人力事务？', a: '通过自助服务，员工可在一个仪表板上申请休假、提交报销、查看工资单、打卡考勤、完成培训并更新个人档案。' },
       { q: '设置 Vorkhive 需要多久？', a: '多数团队一天内即可上线。你导入员工通讯录、设定休假额度，并可在同一周运行首次符合公积金规定的薪资。' },
       { q: 'Vorkhive 会自动计算公积金吗？', a: '会。Vorkhive 在每次发薪时自动计算雇主与雇员的公积金缴款，并生成可用于税务局申报的电子工资单。' },
-      { q: 'Vorkhive 的费用是多少？', a: 'Vorkhive 从每用户每月 S$5（Starter）起。Growth 方案为每用户每月 S$9，包含含公积金的完整薪资；Enterprise 为每用户每月 S$15。' },
+      { q: 'Vorkhive 的费用是多少？', a: 'Vorkhive 从每用户每月 S$5（Starter）起。Growth 方案为每用户每月 S$6，包含含公积金的完整薪资；Enterprise 为每用户每月 S$12。' },
     ],
   },
   finalCta: {

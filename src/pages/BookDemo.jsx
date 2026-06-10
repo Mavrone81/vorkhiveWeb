@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import { MarketingShell, Check } from './Shell.jsx';
 
 const WEEKDAYS = ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'];
@@ -127,7 +128,7 @@ export default function BookDemo() {
               </div>
               {err && <p className="book-err">{err}</p>}
               <button type="submit" className="btn btn-primary" disabled={submitting} style={{ width: '100%', justifyContent: 'center' }}>{submitting ? 'Booking…' : 'Request demo'}</button>
-              <p className="book-fine">No charge. We'll confirm by email with a calendar invite.</p>
+              <p className="book-fine">No charge — we'll confirm by email with a calendar invite. By requesting a demo, you agree to our <Link to="/terms">Terms of Service</Link> and <Link to="/privacy">Privacy Policy</Link>.</p>
             </div>
           </form>
         )}

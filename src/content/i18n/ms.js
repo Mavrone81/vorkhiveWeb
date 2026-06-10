@@ -82,8 +82,8 @@ export default {
     sub: 'Satu platform untuk cuti, tuntutan, kehadiran dan gaji — dengan kos lebih rendah daripada mana-mana satu daripadanya.',
     plans: [
       { name: 'Starter', desc: 'Untuk pasukan kecil yang mengautomasikan HR.', price: 'S$5', period: ' /pengguna / bln', featured: false, badge: '', bullets: ['Sehingga 5 pengguna', 'Cuti & direktori pekerja', 'Tuntutan & kehadiran', 'Sokongan komuniti'], cta: 'Mula percuma', ctaTo: 'register' },
-      { name: 'Growth', desc: 'Untuk pasukan berkembang yang memerlukan gaji & pematuhan.', price: 'S$9', period: ' /pengguna / bln', featured: true, badge: 'Paling popular', bullets: ['Pengguna tanpa had', 'Gaji penuh dengan CPF', 'Slip gaji digital & eksport IRAS', 'Latihan & penilaian', 'Sokongan keutamaan'], cta: 'Mula percubaan 14 hari', ctaTo: 'register' },
-      { name: 'Enterprise', desc: 'Keselamatan dan kawalan lanjutan untuk organisasi besar.', price: 'S$15', period: ' /pengguna / bln', featured: false, badge: '', bullets: ['Semua dalam Growth', 'Log masuk tunggal (SSO)', 'Pengurus kejayaan khusus', 'Akses API penuh'], cta: 'Hubungi jualan', ctaTo: 'contact' },
+      { name: 'Growth', desc: 'Untuk pasukan berkembang yang memerlukan gaji & pematuhan.', price: 'S$6', period: ' /pengguna / bln', featured: true, badge: 'Paling popular', bullets: ['Pengguna tanpa had', 'Gaji penuh dengan CPF', 'Slip gaji digital & eksport IRAS', 'Latihan & penilaian', 'Sokongan keutamaan'], cta: 'Mula percubaan 14 hari', ctaTo: 'register' },
+      { name: 'Enterprise', desc: 'Keselamatan dan kawalan lanjutan untuk organisasi besar.', price: 'S$12', period: ' /pengguna / bln', featured: false, badge: '', bullets: ['Semua dalam Growth', 'Log masuk tunggal (SSO)', 'Pengurus kejayaan khusus', 'Akses API penuh'], cta: 'Hubungi jualan', ctaTo: 'contact' },
     ],
   },
   faq: {
@@ -95,7 +95,7 @@ export default {
       { q: 'Tugas HR apa yang boleh dilakukan pekerja sendiri?', a: 'Melalui layan diri, pekerja memohon cuti, menghantar tuntutan, melihat slip gaji, merakam kehadiran, melengkapkan latihan dan mengemas kini profil — semuanya dari satu papan pemuka.' },
       { q: 'Berapa lama untuk menyediakan Vorkhive?', a: 'Kebanyakan pasukan beroperasi dalam sehari. Anda import direktori pekerja, tetapkan kelayakan cuti dan jalankan gaji patuh CPF pertama anda pada minggu yang sama.' },
       { q: 'Adakah Vorkhive mengira CPF secara automatik?', a: 'Ya. Vorkhive mengira caruman CPF majikan dan pekerja secara automatik pada setiap larian gaji dan menghasilkan slip gaji digital sedia untuk pemfailan IRAS.' },
-      { q: 'Berapakah kos Vorkhive?', a: 'Vorkhive bermula pada S$5 sebulan setiap pengguna (Starter). Pelan Growth ialah S$9 sebulan setiap pengguna dan termasuk gaji penuh dengan CPF; Enterprise ialah S$15 sebulan setiap pengguna.' },
+      { q: 'Berapakah kos Vorkhive?', a: 'Vorkhive bermula pada S$5 sebulan setiap pengguna (Starter). Pelan Growth ialah S$6 sebulan setiap pengguna dan termasuk gaji penuh dengan CPF; Enterprise ialah S$12 sebulan setiap pengguna.' },
     ],
   },
   finalCta: {

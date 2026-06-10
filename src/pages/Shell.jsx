@@ -102,9 +102,18 @@ export function SiteHeader() {
   );
 }
 
+const LEGAL_LABELS = {
+  en: ['Privacy Policy', 'Terms of Service'],
+  zh: ['隐私政策', '服务条款'],
+  ms: ['Dasar Privasi', 'Terma Perkhidmatan'],
+  ta: ['தனியுரிமைக் கொள்கை', 'சேவை விதிமுறைகள்'],
+  th: ['นโยบายความเป็นส่วนตัว', 'ข้อกำหนดการให้บริการ'],
+};
+
 export function SiteFooter() {
   const c = useContent();
   const footer = c.footer || {};
+  const [privLabel, termsLabel] = LEGAL_LABELS[c._lang] || LEGAL_LABELS.en;
   return (
     <footer>
       <div className="wrap">
@@ -122,7 +131,10 @@ export function SiteFooter() {
             </nav>
           ))}
         </div>
-        <div className="foot-bot"><span>{footer.copyright}</span><span>{footer.legal}</span></div>
+        <div className="foot-bot">
+          <span>{footer.copyright}</span>
+          <span className="foot-legal"><Link to="/privacy">{privLabel}</Link> · <Link to="/terms">{termsLabel}</Link> · SOC 2 Type II</span>
+        </div>
       </div>
     </footer>
   );

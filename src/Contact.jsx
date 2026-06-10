@@ -162,7 +162,7 @@ function Contact() {
                                         {loading ? 'Submitting...' : 'Request Free Trial'}
                                     </button>
                                     <p style={{ textAlign: 'center', fontSize: '0.875rem', color: 'var(--text-light)', margin: 0 }}>
-                                        By submitting this form, you agree to our Terms of Service and Privacy Policy.
+                                        By submitting this form, you agree to our <Link to="/terms" style={{ color: 'var(--primary, #4f46e5)', fontWeight: 600 }}>Terms of Service</Link> and <Link to="/privacy" style={{ color: 'var(--primary, #4f46e5)', fontWeight: 600 }}>Privacy Policy</Link>.
                                     </p>
                                 </form>
                             </div>
