@@ -111,12 +111,25 @@ export default function ChatWidget() {
           }}
         >
           {/* Header */}
-          <div style={{ background: ACCENT, color: '#fff', padding: '16px 18px', display: 'flex', alignItems: 'center', gap: 12 }}>
-            <div style={{ width: 38, height: 38, borderRadius: '50%', background: 'rgba(255,255,255,0.18)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, fontSize: 16 }}>V</div>
-            <div style={{ lineHeight: 1.2 }}>
-              <div style={{ fontWeight: 700, fontSize: 15 }}>Vorkhive Assistant</div>
-              <div style={{ fontSize: 12, opacity: 0.85 }}>Typically replies in a moment</div>
+          <div style={{ background: ACCENT, color: '#fff', padding: '16px 18px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+              <div style={{ width: 38, height: 38, borderRadius: '50%', background: 'rgba(255,255,255,0.18)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, fontSize: 16 }}>V</div>
+              <div style={{ lineHeight: 1.2 }}>
+                <div style={{ fontWeight: 700, fontSize: 15 }}>Vorkhive Assistant</div>
+                <div style={{ fontSize: 12, opacity: 0.85 }}>Typically replies in a moment</div>
+              </div>
             </div>
+            <button
+              onClick={() => setOpen(false)}
+              aria-label="Minimise chat"
+              title="Minimise"
+              style={{ background: 'transparent', border: 'none', color: '#fff', cursor: 'pointer', padding: 4, opacity: 0.9, display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: 6 }}
+              onMouseEnter={(e) => (e.currentTarget.style.background = 'rgba(255,255,255,0.18)')}
+              onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
+            >
+              {/* chevron-down = minimise back to the bubble */}
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 12 15 18 9" /></svg>
+            </button>
           </div>
 
           {/* Messages */}
