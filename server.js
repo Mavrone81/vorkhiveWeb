@@ -474,6 +474,12 @@ app.post('/api/slack/events', (req, res) => {
     res.json({ ok: true }); // ack within Slack's 3s window
     try {
         const e = body.event;
+        console.log('[slack-event]', JSON.stringify({
+            type: e?.type, subtype: e?.subtype || null, bot_id: e?.bot_id || null,
+            thread_ts: e?.thread_ts || null, ts: e?.ts || null,
+            hasThread: e?.thread_ts ? threadIndex.has(e.thread_ts) : false,
+            knownThreads: [...threadIndex.keys()], textLen: (e?.text || '').length,
+        }));
         if (!e || e.type !== 'message' || e.bot_id || e.subtype) return; // ignore bot/system/edits
         const threadTs = e.thread_ts;
         if (!threadTs) return;
