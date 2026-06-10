@@ -5,8 +5,8 @@ import { useState, useRef, useEffect } from 'react';
 
 const ACCENT = '#4f46e5';
 const GREETING =
-  "Hi! I'm Vorka, the Vorkhive assistant. Ask me about features, pricing, or how to start your free trial. 👋";
-const QUICK_REPLIES = ['What is Vorkhive?', 'How much does it cost?', 'Start a free trial', 'Talk to a human'];
+  "Hi! I'm Vorka, the Vorkhive HR assistant. Ask me about leave, claims, payroll, CPF compliance or pricing. 👋";
+const QUICK_REPLIES = ['What is Vorkhive?', 'Does it handle CPF & payroll?', 'How much does it cost?', 'Talk to a human'];
 
 export default function ChatWidget() {
   const [open, setOpen] = useState(false);

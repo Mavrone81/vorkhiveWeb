@@ -21,6 +21,9 @@ dist-ssr
 /contacts.json
 /data/
 
+# Design reference assets (mockups, SEO strategy) — not part of the build
+/Design/
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
