@@ -133,7 +133,7 @@ app.post('/api/create-checkout-session', async (req, res) => {
 
 // --- AI chat bot (sales & support), backed by local Ollama -----------------
 const OLLAMA_URL = process.env.OLLAMA_URL || 'http://host.docker.internal:11434';
-const OLLAMA_MODEL = process.env.OLLAMA_MODEL || 'qwen2.5:3b';
+const OLLAMA_MODEL = process.env.OLLAMA_MODEL || 'qwen2.5:1.5b';
 const OLLAMA_KEEPALIVE = process.env.OLLAMA_KEEPALIVE || '15m';
 
 const SYSTEM_PROMPT = `You are Vorka, the friendly sales and support assistant for Vorkhive (https://vorkhive.com).
