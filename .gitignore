@@ -20,6 +20,7 @@ dist-ssr
 # Runtime contact-form data (server-managed, persistent; see contacts.example.json)
 /contacts.json
 /content.json
+/usage.json
 /uploads/
 /data/
 

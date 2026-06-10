@@ -25,4 +25,5 @@ services:
     volumes:
       - ./data/contacts.json:/app/contacts.json
       - ./data/content.json:/app/content.json
+      - ./data/usage.json:/app/usage.json
       - ./data/uploads:/app/uploads

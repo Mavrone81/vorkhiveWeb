@@ -328,6 +328,28 @@ const ANTHROPIC_API_KEY = process.env.ANTHROPIC_API_KEY || '';
 const CLAUDE_MODEL = process.env.CLAUDE_MODEL || 'claude-haiku-4-5';
 const anthropic = ANTHROPIC_API_KEY ? new Anthropic({ apiKey: ANTHROPIC_API_KEY }) : null;
 
+// Self-tracked Claude usage tally (persisted) powering the admin readout.
+const USAGE_FILE = path.join(__dirname, 'usage.json');
+const MODEL_PRICES = { // USD per 1M tokens: [input, output]
+    'claude-haiku-4-5': [1, 5],
+    'claude-sonnet-4-6': [3, 15],
+    'claude-opus-4-8': [5, 25],
+};
+function readUsage() {
+    try { return JSON.parse(fs.readFileSync(USAGE_FILE, 'utf8')) || {}; } catch { return {}; }
+}
+function recordUsage(inTok, outTok) {
+    try {
+        const u = readUsage();
+        const month = new Date().toISOString().slice(0, 7); // YYYY-MM (UTC)
+        const m = u[month] || (u[month] = { messages: 0, inputTokens: 0, outputTokens: 0 });
+        m.messages += 1;
+        m.inputTokens += inTok || 0;
+        m.outputTokens += outTok || 0;
+        fs.writeFileSync(USAGE_FILE, JSON.stringify(u));
+    } catch (e) { console.error('usage write:', e.message); }
+}
+
 async function streamClaude(history, write) {
     const stream = anthropic.messages.stream({
         model: CLAUDE_MODEL,
@@ -339,7 +361,8 @@ async function streamClaude(history, write) {
         })),
     });
     stream.on('text', (t) => write(t));
-    await stream.finalMessage();
+    const final = await stream.finalMessage();
+    if (final?.usage) recordUsage(final.usage.input_tokens, final.usage.output_tokens);
 }
 
 async function streamOllama(history, write) {
@@ -429,6 +452,21 @@ app.post('/api/chat', chatLimiter, async (req, res) => {
         if (!res.headersSent) res.status(502);
         res.end('The assistant is unavailable right now. Please email enquires@vorkhive.com.');
     }
+});
+
+// Admin: self-tracked Claude API usage + estimated cost (Console is authoritative).
+app.get('/api/usage', requireAdmin, (req, res) => {
+    const u = readUsage();
+    const [pin, pout] = MODEL_PRICES[CLAUDE_MODEL] || MODEL_PRICES['claude-haiku-4-5'];
+    const rows = Object.keys(u)
+        .filter((k) => /^\d{4}-\d{2}$/.test(k))
+        .sort().reverse()
+        .map((month) => {
+            const m = u[month];
+            const estCost = (m.inputTokens / 1e6) * pin + (m.outputTokens / 1e6) * pout;
+            return { month, messages: m.messages, inputTokens: m.inputTokens, outputTokens: m.outputTokens, estCost };
+        });
+    res.json({ model: CLAUDE_MODEL, prices: { input: pin, output: pout }, rows });
 });
 
 // ---- Human handoff endpoints ----------------------------------------------

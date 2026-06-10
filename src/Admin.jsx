@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { defaultContent, mergeContent } from './content/defaults';
 
@@ -136,7 +136,7 @@ function Admin() {
     );
   }
 
-  const TABS = [['content', 'Site content'], ['contacts', 'Contacts & branding'], ['leads', 'Leads']];
+  const TABS = [['content', 'Site content'], ['contacts', 'Contacts & branding'], ['leads', 'Leads'], ['usage', 'API usage']];
 
   return (
     <div style={{ background: '#F4F5FA', minHeight: '100vh', fontFamily: 'Inter, system-ui, sans-serif', paddingBottom: 80 }}>
@@ -345,6 +345,57 @@ function Admin() {
         )}
 
         {tab === 'leads' && <Leads contacts={contacts} />}
+        {tab === 'usage' && <Usage token={token} />}
+      </div>
+    </div>
+  );
+}
+
+function Usage({ token }) {
+  const [data, setData] = useState(null);
+  const [err, setErr] = useState('');
+  useEffect(() => {
+    fetch('/api/usage', { headers: { Authorization: `Bearer ${token}` } })
+      .then((r) => (r.ok ? r.json() : Promise.reject(new Error('load'))))
+      .then(setData)
+      .catch(() => setErr('Could not load usage.'));
+  }, [token]);
+
+  const cost = (c) => '$' + (c < 0.01 ? c.toFixed(4) : c.toFixed(2));
+  const num = (n) => (n || 0).toLocaleString('en-US');
+
+  if (err) return <div style={{ color: '#dc2626' }}>{err}</div>;
+  if (!data) return <div style={{ color: '#64748b' }}>Loading…</div>;
+
+  return (
+    <div>
+      <p style={{ fontSize: '.85rem', color: '#64748b', margin: '0 0 12px' }}>
+        Chat bot usage on the Claude API (model: <code>{data.model}</code>, ${data.prices?.input}/1M in · ${data.prices?.output}/1M out).
+        Estimated — the Anthropic Console is the source of truth for billing.
+      </p>
+      <div style={{ background: '#fff', borderRadius: 12, border: '1px solid #e2e8f0', overflow: 'hidden' }}>
+        <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '.88rem' }}>
+          <thead>
+            <tr style={{ background: '#f8fafc', borderBottom: '1px solid #e2e8f0' }}>
+              {['Month', 'Messages', 'Input tokens', 'Output tokens', 'Est. cost'].map((h) => (
+                <th key={h} style={{ padding: '10px 14px', fontWeight: 600 }}>{h}</th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {data.rows.length === 0 ? (
+              <tr><td colSpan="5" style={{ padding: 30, textAlign: 'center', color: '#94a3b8' }}>No usage recorded yet.</td></tr>
+            ) : data.rows.map((r) => (
+              <tr key={r.month} style={{ borderBottom: '1px solid #eef0f4' }}>
+                <td style={{ padding: '10px 14px', fontWeight: 600 }}>{r.month}</td>
+                <td style={{ padding: '10px 14px' }}>{num(r.messages)}</td>
+                <td style={{ padding: '10px 14px' }}>{num(r.inputTokens)}</td>
+                <td style={{ padding: '10px 14px' }}>{num(r.outputTokens)}</td>
+                <td style={{ padding: '10px 14px', fontWeight: 600 }}>{cost(r.estCost)}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
       </div>
     </div>
   );
