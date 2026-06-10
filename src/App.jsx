@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import './redesign.css';
 import { useContent } from './content/ContentContext.jsx';
@@ -22,9 +22,21 @@ function Logo() {
   );
 }
 
+const REGISTER_URL = 'https://app.vorkhive.com/register';
+// "Start free" / "Start trial" CTAs go straight to sign-up; "Book a demo" /
+// "Contact sales" go to the contact form.
+function CtaButton({ label, className, style }) {
+  const toContact = /contact|sales|demo|talk/i.test(label || '');
+  return toContact
+    ? <Link to="/contact" className={className} style={style}>{label}</Link>
+    : <a href={REGISTER_URL} className={className} style={style}>{label}</a>;
+}
+
 export default function App() {
   const c = useContent();
   const { hero, logos, intro, problem, pillars, features, metrics, steps, testimonials, pricing, faq, finalCta, footer } = c;
+  const [mobileOpen, setMobileOpen] = useState(false);
+  const NAV = [['#platform', 'Platform'], ['#features', 'Features'], ['#pricing', 'Pricing'], ['#faq', 'FAQ'], ['#testimonials', 'Customers']];
 
   useEffect(() => {
     const io = new IntersectionObserver((entries) => {
@@ -43,17 +55,23 @@ export default function App() {
           <nav aria-label="Primary">
             <Logo />
             <div className="navlinks">
-              <a href="#platform">Platform</a>
-              <a href="#features">Features</a>
-              <a href="#pricing">Pricing</a>
-              <a href="#faq">FAQ</a>
-              <a href="#testimonials">Customers</a>
+              {NAV.map(([href, label]) => <a key={href} href={href}>{label}</a>)}
             </div>
             <div className="navcta">
               <a href="https://app.vorkhive.com" className="btn btn-ghost">Sign in</a>
-              <Link to="/contact" className="btn btn-primary">Start free</Link>
+              <CtaButton label="Start free" className="btn btn-primary" />
             </div>
+            <button className="menu-toggle" aria-label={mobileOpen ? 'Close menu' : 'Open menu'} aria-expanded={mobileOpen} onClick={() => setMobileOpen((o) => !o)}>
+              {mobileOpen
+                ? <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true"><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>
+                : <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true"><line x1="3" y1="6" x2="21" y2="6" /><line x1="3" y1="12" x2="21" y2="12" /><line x1="3" y1="18" x2="21" y2="18" /></svg>}
+            </button>
           </nav>
+        </div>
+        <div className={`mobile-menu${mobileOpen ? ' open' : ''}`}>
+          {NAV.map(([href, label]) => <a key={href} href={href} onClick={() => setMobileOpen(false)}>{label}</a>)}
+          <a href="https://app.vorkhive.com" className="btn btn-ghost">Sign in</a>
+          <CtaButton label="Start free" className="btn btn-primary" />
         </div>
       </header>
 
@@ -65,8 +83,8 @@ export default function App() {
             <h1 id="hero-h1">{hero.headlineLead}<span className="accent">{hero.headlineAccent}</span></h1>
             <p className="sub">{hero.subtitle}</p>
             <div className="hero-cta">
-              <Link to="/contact" className="btn btn-primary">{hero.ctaPrimary}</Link>
-              <Link to="/contact" className="btn btn-ghost">{hero.ctaSecondary}</Link>
+              <CtaButton label={hero.ctaPrimary} className="btn btn-primary" />
+              <CtaButton label={hero.ctaSecondary} className="btn btn-ghost" />
             </div>
             <p className="trust-line"><Check s={17} sw={2.5} />{hero.trustLine}</p>
 
@@ -272,7 +290,7 @@ export default function App() {
                   <div className="pdesc">{p.desc}</div>
                   <div className="amt">{p.price}<small>{p.period}</small></div>
                   <ul>{p.bullets.map((b, j) => <li key={j}><Check />{b}</li>)}</ul>
-                  <Link to="/contact" className={`btn ${p.featured ? 'btn-primary' : 'btn-ghost'}`}>{p.cta}</Link>
+                  <CtaButton label={p.cta} className={`btn ${p.featured ? 'btn-primary' : 'btn-ghost'}`} />
                 </article>
               ))}
             </div>
@@ -301,8 +319,8 @@ export default function App() {
             <h2 id="cta-h2">{finalCta.heading}</h2>
             <p>{finalCta.sub}</p>
             <div className="hero-cta">
-              <Link to="/contact" className="btn btn-lime">{finalCta.ctaPrimary}</Link>
-              <Link to="/contact" className="btn btn-ghost" style={{ background: 'transparent', color: '#fff', borderColor: 'rgba(255,255,255,.4)' }}>{finalCta.ctaSecondary}</Link>
+              <CtaButton label={finalCta.ctaPrimary} className="btn btn-lime" />
+              <CtaButton label={finalCta.ctaSecondary} className="btn btn-ghost" style={{ background: 'transparent', color: '#fff', borderColor: 'rgba(255,255,255,.4)' }} />
             </div>
             <p className="trust-line"><Check s={17} sw={2.5} />{finalCta.trustLine}</p>
           </div>

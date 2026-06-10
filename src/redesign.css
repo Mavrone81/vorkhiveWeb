@@ -31,7 +31,13 @@
 .vh-root .navlinks a:hover{color:var(--ink)}
 .vh-root .navcta{display:flex;gap:12px;align-items:center}
 .vh-root .navcta .btn{padding:11px 20px;font-size:.92rem}
-.vh-root .menu-toggle{display:none;background:none;border:none;cursor:pointer}
+.vh-root .menu-toggle{display:none;background:none;border:none;cursor:pointer;color:var(--ink);padding:6px}
+.vh-root .mobile-menu{display:none}
+.vh-root .mobile-menu.open{display:flex;flex-direction:column;gap:2px;padding:8px 24px 18px;background:#fff;border-top:1px solid var(--line)}
+.vh-root .mobile-menu a:not(.btn){padding:12px 2px;color:var(--slate);font-weight:600;border-bottom:1px solid var(--bg-tint)}
+.vh-root .mobile-menu a:not(.btn):hover{color:var(--ink)}
+.vh-root .mobile-menu .btn{width:100%;justify-content:center;margin-top:10px}
+@media(min-width:901px){.vh-root .mobile-menu.open{display:none}}
 
 .vh-root .hero{position:relative;padding:84px 0 56px;text-align:center;overflow:hidden}
 .vh-root .hero::before{content:"";position:absolute;top:-200px;left:50%;transform:translateX(-50%);width:900px;height:700px;background:radial-gradient(circle,rgba(91,61,245,.16),transparent 62%);z-index:-1}
