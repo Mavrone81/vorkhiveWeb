@@ -1,24 +1,21 @@
-import { StrictMode } from 'react'
-import { createRoot } from 'react-dom/client'
-import { BrowserRouter, Routes, Route } from 'react-router-dom'
-import './index.css'
-import App from './App.jsx'
-import Contact from './Contact.jsx'
-import Admin from './Admin.jsx'
-import Success from './Success.jsx'
-import Layout from './Layout.jsx'
+import { StrictMode } from 'react';
+import { hydrateRoot, createRoot } from 'react-dom/client';
+import { BrowserRouter } from 'react-router-dom';
+import AppRoutes from './AppRoutes.jsx';
 
-createRoot(document.getElementById('root')).render(
+const root = document.getElementById('root');
+const tree = (
   <StrictMode>
     <BrowserRouter>
-      <Layout>
-        <Routes>
-          <Route path="/" element={<App />} />
-          <Route path="/contact" element={<Contact />} />
-          <Route path="/admin" element={<Admin />} />
-          <Route path="/success" element={<Success />} />
-        </Routes>
-      </Layout>
+      <AppRoutes />
     </BrowserRouter>
-  </StrictMode>,
-)
+  </StrictMode>
+);
+
+// Prerendered routes ship real markup in #root -> hydrate it.
+// A bare shell (no element child) -> client render from scratch.
+if (root.firstElementChild) {
+  hydrateRoot(root, tree);
+} else {
+  createRoot(root).render(tree);
+}

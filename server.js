@@ -221,9 +221,17 @@ app.post('/api/chat', async (req, res) => {
     }
 });
 
-// Handle SPA routing: ALWAYS serve index.html for non-API routes
+// SPA routing with SSG: serve the prerendered HTML for a route when it exists
+// (so crawlers get full content), otherwise fall back to the home shell.
+const DIST = path.join(__dirname, 'dist');
 app.get(/(.*)/, (req, res) => {
-    res.sendFile(path.join(__dirname, 'dist', 'index.html'));
+    const rel = req.path === '/' ? 'index.html' : path.join(req.path.replace(/^\/+|\/+$/g, ''), 'index.html');
+    const candidate = path.join(DIST, rel);
+    // Guard against path traversal; only serve files inside dist/.
+    if (candidate.startsWith(DIST + path.sep) && fs.existsSync(candidate)) {
+        return res.sendFile(candidate);
+    }
+    res.sendFile(path.join(DIST, 'index.html'));
 });
 
 app.listen(PORT, HOST, () => {
