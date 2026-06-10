@@ -15,7 +15,7 @@
 .vh-root .skip:focus{left:0}
 .vh-root .eyebrow{display:inline-block;font-family:'Sora';font-weight:700;font-size:.74rem;letter-spacing:.18em;text-transform:uppercase;color:var(--violet);background:var(--violet-soft);padding:7px 14px;border-radius:100px;margin-bottom:20px}
 .vh-root .btn{display:inline-flex;align-items:center;gap:8px;font-family:'Sora';font-weight:700;font-size:1rem;padding:15px 28px;border-radius:14px;cursor:pointer;border:none;transition:transform .15s ease, box-shadow .15s ease}
-.vh-root .btn-primary{background:var(--violet);color:#fff;box-shadow:0 10px 30px -8px rgba(91,61,245,.6)}
+.vh-root .btn-primary{background:linear-gradient(120deg,#6D4BFF,var(--violet));color:#fff;box-shadow:0 10px 30px -8px rgba(91,61,245,.6)}
 .vh-root .btn-primary:hover{transform:translateY(-2px);box-shadow:0 16px 40px -8px rgba(91,61,245,.7)}
 .vh-root .btn-ghost{background:#fff;color:var(--ink);border:1.5px solid var(--line)}
 .vh-root .btn-ghost:hover{border-color:var(--violet);color:var(--violet);transform:translateY(-2px)}
@@ -40,14 +40,22 @@
 .vh-root .mobile-menu .btn{width:100%;justify-content:center;margin-top:10px}
 @media(min-width:901px){.vh-root .mobile-menu.open{display:none}}
 
-.vh-root .hero{position:relative;padding:84px 0 56px;text-align:center;overflow:hidden}
-.vh-root .hero::before{content:"";position:absolute;top:-200px;left:50%;transform:translateX(-50%);width:900px;height:700px;background:radial-gradient(circle,rgba(91,61,245,.16),transparent 62%);z-index:-1}
-.vh-root .hero h1{font-size:clamp(2.5rem,6vw,4.4rem);font-weight:800;max-width:16ch;margin:0 auto 24px}
-.vh-root .hero h1 .accent{background:linear-gradient(120deg,var(--violet),#9B7BFF);-webkit-background-clip:text;background-clip:text;color:transparent}
-.vh-root .hero p.sub{font-size:clamp(1.05rem,2vw,1.28rem);color:var(--slate);max-width:58ch;margin:0 auto 36px}
+.vh-root .hero{position:relative;margin-top:-78px;padding:170px 0 96px;text-align:center;overflow:hidden;color:#fff;background:linear-gradient(168deg,#1A0B4E 0%,#3A1FB8 40%,#5B3DF5 72%,#7C5CFF 100%);border-radius:0 0 44px 44px}
+.vh-root .hero::before{content:"";position:absolute;top:-160px;right:-130px;width:600px;height:600px;background:radial-gradient(circle,rgba(198,255,77,.30),transparent 60%);z-index:0;pointer-events:none}
+.vh-root .hero::after{content:"";position:absolute;bottom:-300px;left:-170px;width:700px;height:700px;background:radial-gradient(circle,rgba(124,92,255,.55),transparent 62%);z-index:0;pointer-events:none}
+.vh-root .hero>.wrap{position:relative;z-index:1}
+.vh-root .hero .eyebrow{background:rgba(255,255,255,.12);color:#fff;border:1px solid rgba(255,255,255,.2)}
+.vh-root .hero h1{font-size:clamp(2.6rem,6.2vw,4.6rem);font-weight:800;max-width:15ch;margin:0 auto 24px;color:#fff;letter-spacing:-.02em;line-height:1.04}
+.vh-root .hero h1 .accent{background:linear-gradient(100deg,#D4FF6E,#A6FF7A);-webkit-background-clip:text;background-clip:text;color:transparent}
+.vh-root .hero p.sub{font-size:clamp(1.05rem,2vw,1.28rem);color:rgba(255,255,255,.85);max-width:56ch;margin:0 auto 36px}
+.vh-root .hero .btn-primary{background:var(--lime);color:#16142E;box-shadow:0 14px 36px -10px rgba(198,255,77,.55)}
+.vh-root .hero .btn-primary:hover{background:#d4ff6e;transform:translateY(-2px);box-shadow:0 18px 44px -10px rgba(198,255,77,.7)}
+.vh-root .hero .btn-ghost{background:rgba(255,255,255,.1);color:#fff;border:1.5px solid rgba(255,255,255,.32)}
+.vh-root .hero .btn-ghost:hover{background:rgba(255,255,255,.2);color:#fff;border-color:rgba(255,255,255,.5)}
 .vh-root .hero-cta{display:flex;gap:14px;justify-content:center;flex-wrap:wrap;margin-bottom:18px}
-.vh-root .trust-line{font-size:.9rem;color:var(--slate);display:flex;gap:8px;align-items:center;justify-content:center;flex-wrap:wrap}
-.vh-root .trust-line svg{color:#19B36B}
+.vh-root .trust-line{font-size:.9rem;color:rgba(255,255,255,.82);display:flex;gap:8px;align-items:center;justify-content:center;flex-wrap:wrap}
+.vh-root .trust-line svg{color:var(--lime)}
+.vh-root .hero .shot-caption{color:rgba(255,255,255,.72)}
 
 .vh-root .device-row{display:flex;gap:26px;justify-content:center;align-items:flex-start;margin:60px auto 0;max-width:920px;flex-wrap:wrap}
 .vh-root .phone{width:330px;border-radius:30px;background:#0B0A1A;padding:10px;box-shadow:var(--shadow);flex-shrink:0}
@@ -141,9 +149,9 @@
 .vh-root .mini-card .amt{margin-left:auto;font-family:'Sora';font-weight:700;font-size:.9rem}
 .vh-root .mini-card .pill{margin-left:auto;font-size:.64rem;font-weight:700;padding:3px 10px;border-radius:100px;background:#E4F8EE;color:#179a5b}
 
-.vh-root .metrics{display:grid;grid-template-columns:repeat(4,1fr);gap:24px;text-align:center;background:var(--violet-soft);border-radius:28px;padding:48px 30px}
-.vh-root .metric .num{font-family:'Sora';font-weight:800;font-size:clamp(2.2rem,4vw,3rem);color:var(--violet);line-height:1}
-.vh-root .metric .lab{color:var(--slate);font-weight:500;margin-top:8px;font-size:.96rem}
+.vh-root .metrics{display:grid;grid-template-columns:repeat(4,1fr);gap:24px;text-align:center;background:linear-gradient(125deg,#5B3DF5,#3A1FB8);border-radius:28px;padding:54px 30px;box-shadow:0 34px 70px -34px rgba(91,61,245,.65)}
+.vh-root .metric .num{font-family:'Sora';font-weight:800;font-size:clamp(2.2rem,4vw,3rem);color:var(--lime);line-height:1}
+.vh-root .metric .lab{color:rgba(255,255,255,.82);font-weight:500;margin-top:8px;font-size:.96rem}
 
 .vh-root .steps{display:grid;grid-template-columns:repeat(3,1fr);gap:26px}
 .vh-root .step{padding:34px 28px;border-radius:var(--radius);background:var(--bg-tint)}
