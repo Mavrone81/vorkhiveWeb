@@ -1,5 +1,6 @@
 import express from 'express';
 import cors from 'cors';
+import rateLimit from 'express-rate-limit';
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
@@ -35,8 +36,49 @@ const PORT = 4998;
 const HOST = '0.0.0.0';
 const DATA_FILE = path.join(__dirname, 'contacts.json');
 
-app.use(cors());
+// Token that gates the admin contacts API (set in server-side .env, never committed).
+const ADMIN_TOKEN = process.env.ADMIN_TOKEN || '';
+
+// Behind nginx: trust the first proxy hop so req.ip is the real client IP
+// (nginx forwards X-Forwarded-For / X-Real-IP), which rate-limiting relies on.
+app.set('trust proxy', 1);
+app.disable('x-powered-by');
+
+// Restrict cross-origin reads to our own site (same-origin requests still work).
+const ALLOWED_ORIGINS = ['https://vorkhive.com', 'https://www.vorkhive.com'];
+app.use(cors({
+    origin(origin, cb) {
+        if (!origin || ALLOWED_ORIGINS.includes(origin)) return cb(null, true);
+        return cb(null, false);
+    },
+}));
+
+// Baseline security headers (nginx passes these through to the client).
+app.use((req, res, next) => {
+    res.setHeader('X-Content-Type-Options', 'nosniff');
+    res.setHeader('X-Frame-Options', 'SAMEORIGIN');
+    res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
+    res.setHeader('Strict-Transport-Security', 'max-age=31536000; includeSubDomains');
+    next();
+});
+
 app.use(express.json());
+
+// Rate limits to curb abuse / API scraping / LLM resource exhaustion.
+const ipKey = (req) => req.ip;
+app.use('/api/', rateLimit({ windowMs: 60_000, max: 100, standardHeaders: true, legacyHeaders: false, keyGenerator: ipKey }));
+const chatLimiter = rateLimit({ windowMs: 60_000, max: 20, standardHeaders: true, legacyHeaders: false, keyGenerator: ipKey });
+const contactLimiter = rateLimit({ windowMs: 60_000, max: 6, standardHeaders: true, legacyHeaders: false, keyGenerator: ipKey });
+
+// Require the admin token (Bearer header or ?token=) to read stored contacts.
+function requireAdmin(req, res, next) {
+    const bearer = (req.get('authorization') || '').replace(/^Bearer\s+/i, '');
+    const token = bearer || req.query.token || '';
+    if (!ADMIN_TOKEN || token !== ADMIN_TOKEN) {
+        return res.status(401).json({ error: 'Unauthorized' });
+    }
+    next();
+}
 
 // Serve static files from the 'dist' directory
 app.use(express.static(path.join(__dirname, 'dist')));
@@ -48,7 +90,7 @@ if (!fs.existsSync(DATA_FILE)) {
 
 // ... rest of the API routes ...
 
-app.post('/api/contact', async (req, res) => {
+app.post('/api/contact', contactLimiter, async (req, res) => {
     try {
         const newContact = {
             id: Date.now().toString(),
@@ -85,8 +127,8 @@ app.post('/api/contact', async (req, res) => {
     }
 });
 
-// Admin endpoint to read contacts
-app.get('/api/contacts', (req, res) => {
+// Admin endpoint to read contacts (token-protected; was previously public).
+app.get('/api/contacts', requireAdmin, (req, res) => {
     try {
         if (!fs.existsSync(DATA_FILE)) {
             return res.json([]);
@@ -160,7 +202,7 @@ CONTACT THE TEAM
 YOUR JOB
 Answer visitor questions about Vorkhive's HRMS (leave, claims, attendance, payroll, CPF/MOM/IRAS compliance), highlight relevant benefits for Singapore teams, and guide interested visitors to start free, book a demo, or contact the team. Be warm, concise (2-3 short sentences), and helpful. If you don't know something or the visitor wants a human, share the contact details above. Only discuss Vorkhive and Singapore HR/payroll topics; politely redirect anything off-topic.`;
 
-app.post('/api/chat', async (req, res) => {
+app.post('/api/chat', chatLimiter, async (req, res) => {
     const incoming = Array.isArray(req.body?.messages) ? req.body.messages : [];
     // Keep the last 10 turns, sanitise roles/content, cap length.
     const history = incoming.slice(-10).map((m) => ({

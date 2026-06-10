@@ -9,18 +9,21 @@ function Admin() {
     const [isAuthenticated, setIsAuthenticated] = useState(false);
     const [password, setPassword] = useState('');
     const [loginError, setLoginError] = useState('');
+    const [token, setToken] = useState('');
 
     useEffect(() => {
-        if (isAuthenticated) {
-            fetchContacts();
-        }
         window.scrollTo(0, 0);
     }, [isAuthenticated]);
 
-    const fetchContacts = async () => {
+    const fetchContacts = async (tk = token) => {
         try {
             setLoading(true);
-            const response = await fetch('/api/contacts');
+            const response = await fetch('/api/contacts', {
+                headers: { Authorization: `Bearer ${tk}` },
+            });
+            if (response.status === 401) {
+                throw new Error('Session expired — please log in again.');
+            }
             if (!response.ok) {
                 throw new Error('Failed to fetch contacts');
             }
@@ -29,7 +32,7 @@ function Admin() {
             setError(null);
         } catch (err) {
             console.error('Error fetching contacts:', err);
-            setError('Could not load leads. Make sure the backend server is running on port 3001.');
+            setError(err.message || 'Could not load leads.');
         } finally {
             setLoading(false);
         }
@@ -45,13 +48,28 @@ function Admin() {
         });
     };
 
-    const handleLogin = (e) => {
+    const handleLogin = async (e) => {
         e.preventDefault();
-        if (password === 'vorkhive2026') {
+        setLoginError('');
+        try {
+            // Validate the token against the server (single source of truth).
+            const res = await fetch('/api/contacts', {
+                headers: { Authorization: `Bearer ${password}` },
+            });
+            if (res.status === 401) {
+                setLoginError('Invalid access token');
+                return;
+            }
+            if (!res.ok) {
+                setLoginError('Server error, please try again');
+                return;
+            }
+            const data = await res.json();
+            setToken(password);
+            setContacts(data);
             setIsAuthenticated(true);
-            setLoginError('');
-        } else {
-            setLoginError('Invalid password');
+        } catch {
+            setLoginError('Could not reach the server');
         }
     };
 
@@ -88,14 +106,14 @@ function Admin() {
                         <img src={logoImg} alt="Vorkhive" style={{ height: '40px' }} />
                     </div>
                     <h2 style={{ marginBottom: '0.5rem' }}>Admin Access</h2>
-                    <p style={{ color: 'var(--text-light)', marginBottom: '2rem' }}>Please enter the password to view leads.</p>
+                    <p style={{ color: 'var(--text-light)', marginBottom: '2rem' }}>Enter the admin access token to view leads.</p>
 
                     <form onSubmit={handleLogin} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
                         <input
                             type="password"
                             value={password}
                             onChange={(e) => setPassword(e.target.value)}
-                            placeholder="Enter password"
+                            placeholder="Enter access token"
                             style={{ padding: '0.75rem 1rem', borderRadius: 'var(--radius-md)', border: '1px solid var(--border)', fontSize: '1rem' }}
                             required
                         />

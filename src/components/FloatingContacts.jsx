@@ -1,11 +1,13 @@
 // Floating quick-contact buttons (WhatsApp, Call, Email).
 // Bottom-left so they don't overlap the chat widget (bottom-right).
 
-const PHONE = '+6591275283';              // tel: format
-const WA = '6591275283';                  // wa.me format (no + or spaces)
+const PHONE = '+6587007621';              // tel: format
+const WA = '6587007621';                  // wa.me format (no + or spaces)
 const WA_TEXT = encodeURIComponent("Hi Vorkhive, I'd like to know more about your HRMS.");
-const MAIL = 'samuel@vorkhive.com,enquires@vorkhive.com';
+const MAIL_TO = 'samuel@vorkhive.com';
+const MAIL_CC = 'enquires@vorkhive.com';
 const MAIL_SUBJECT = encodeURIComponent('Vorkhive enquiry');
+const MAIL_BODY = encodeURIComponent('Hi Vorkhive team,\n\nI would like to know more about your HRMS.\n\n');
 
 const ACTIONS = [
   {
@@ -24,7 +26,7 @@ const ACTIONS = [
   },
   {
     key: 'email', label: 'Email us', color: '#334155',
-    href: `mailto:${MAIL}?subject=${MAIL_SUBJECT}`, external: false,
+    href: `mailto:${MAIL_TO}?cc=${MAIL_CC}&subject=${MAIL_SUBJECT}&body=${MAIL_BODY}`, external: false,
     icon: (
       <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg>
     ),
