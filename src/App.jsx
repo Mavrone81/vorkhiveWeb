@@ -338,7 +338,7 @@ export default function App() {
               <nav className="foot-col" aria-label={col.title} key={i}>
                 <h4>{col.title}</h4>
                 {col.links.map((lnk, j) => (
-                  lnk.href.startsWith('/') ? <Link to={lnk.href} key={j}>{lnk.label}</Link> : <a href={lnk.href} key={j}>{lnk.label}</a>
+                  (lnk.href.startsWith('/') && !lnk.href.includes('#')) ? <Link to={lnk.href} key={j}>{lnk.label}</Link> : <a href={lnk.href} key={j}>{lnk.label}</a>
                 ))}
               </nav>
             ))}

@@ -115,9 +115,9 @@ export const defaultContent = {
   footer: {
     brandText: 'The Singapore-compliant HRMS for leave, claims, attendance and payroll. Run all of HR from one login.',
     columns: [
-      { title: 'Platform', links: [{ label: 'Leave management', href: '#platform' }, { label: 'Claims', href: '#platform' }, { label: 'Payroll & CPF', href: '#platform' }, { label: 'Attendance', href: '#platform' }, { label: 'Pricing', href: '#pricing' }] },
+      { title: 'Platform', links: [{ label: 'Singapore payroll', href: '/payroll-singapore' }, { label: 'CPF payroll', href: '/cpf-payroll' }, { label: 'Leave management', href: '/#platform' }, { label: 'Attendance', href: '/#platform' }, { label: 'Pricing', href: '/#pricing' }] },
       { title: 'Company', links: [{ label: 'About', href: '#' }, { label: 'Careers', href: '#' }, { label: 'Blog', href: '#' }, { label: 'Contact', href: '/contact' }] },
-      { title: 'Resources', links: [{ label: 'Help center', href: '#' }, { label: 'Security', href: '#' }, { label: 'Status', href: '#' }, { label: 'CPF guide', href: '#' }] },
+      { title: 'Resources', links: [{ label: 'Help center', href: '#' }, { label: 'Security', href: '#' }, { label: 'Status', href: '#' }, { label: 'CPF guide', href: '/cpf-payroll' }] },
     ],
     copyright: '© 2026 Vorkhive, Inc. · Singapore. All rights reserved.',
     legal: 'Privacy · Terms · SOC 2 Type II',

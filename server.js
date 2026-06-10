@@ -539,6 +539,52 @@ import('./dist-ssr/entry-server.js')
     .then((m) => { ssr = m; console.log('SSR bundle loaded'); })
     .catch((e) => console.error('SSR bundle not available, using client-render fallback:', e.message));
 
+// Per-route SEO (unique title/meta/canonical + FAQ schema) for content pages.
+const ROUTE_SEO = {
+    '/payroll-singapore': {
+        title: 'Singapore Payroll Software with CPF | Vorkhive HRMS',
+        description: 'Run Singapore payroll with CPF calculated automatically, digital payslips and IRAS-ready (IR8A) filing. MOM-ready payroll software from Vorkhive.',
+        canonical: 'https://vorkhive.com/payroll-singapore',
+        faq: [
+            ['Does Vorkhive calculate CPF automatically?', 'Yes. Employer and employee CPF contributions are calculated automatically on every payroll run, and appear on each digital payslip.'],
+            ['Is Vorkhive payroll IRAS compliant?', 'Vorkhive produces IRAS-ready year-end reporting (IR8A), so filing is straightforward.'],
+            ['How long does setup take?', 'Most Singapore teams are live within a day and run their first CPF-compliant payroll the same week.'],
+        ],
+    },
+    '/cpf-payroll': {
+        title: 'CPF Payroll Software — Automatic CPF Calculation | Vorkhive',
+        description: 'CPF payroll software that calculates employer and employee CPF automatically on every run, with compliant payslips and IRAS-ready (IR8A) reporting.',
+        canonical: 'https://vorkhive.com/cpf-payroll',
+        faq: [
+            ['Does Vorkhive calculate both employer and employee CPF?', 'Yes — both are calculated automatically on every payroll run.'],
+            ['Do I need to update CPF rates myself?', 'No. Vorkhive keeps CPF handling aligned with current rules without manual table updates.'],
+            ['Is the CPF data used for IRAS filing?', 'Yes. The same payroll data flows into IRAS-ready year-end reporting (IR8A).'],
+        ],
+    },
+};
+const escHtml = (s) => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+const escAttr = (s) => escHtml(s).replace(/"/g, '&quot;');
+function applyRouteSeo(html, route) {
+    const s = ROUTE_SEO[route];
+    if (!s) return html;
+    const faqJson = s.faq
+        ? JSON.stringify({
+            '@context': 'https://schema.org', '@type': 'FAQPage',
+            mainEntity: s.faq.map(([q, a]) => ({ '@type': 'Question', name: q, acceptedAnswer: { '@type': 'Answer', text: a } })),
+        }).replace(/</g, '\\u003c')
+        : '';
+    return html
+        .replace(/<title>[^<]*<\/title>/, `<title>${escHtml(s.title)}</title>`)
+        .replace(/(<meta name="description" content=")[^"]*(")/, `$1${escAttr(s.description)}$2`)
+        .replace(/(<link rel="canonical" href=")[^"]*(")/, `$1${s.canonical}$2`)
+        .replace(/(<meta property="og:title" content=")[^"]*(")/, `$1${escAttr(s.title)}$2`)
+        .replace(/(<meta property="og:description" content=")[^"]*(")/, `$1${escAttr(s.description)}$2`)
+        .replace(/(<meta property="og:url" content=")[^"]*(")/, `$1${s.canonical}$2`)
+        .replace(/(<meta name="twitter:title" content=")[^"]*(")/, `$1${escAttr(s.title)}$2`)
+        .replace(/(<meta name="twitter:description" content=")[^"]*(")/, `$1${escAttr(s.description)}$2`)
+        .replace('</head>', `${faqJson ? `<script type="application/ld+json">${faqJson}</script>` : ''}</head>`);
+}
+
 app.get(/(.*)/, (req, res) => {
     try {
         const content = ssr ? ssr.mergeContent(ssr.defaultContent, readContent()) : null;
@@ -546,9 +592,12 @@ app.get(/(.*)/, (req, res) => {
         const stateScript = content
             ? `<script>window.__CONTENT__=${JSON.stringify(content).replace(/</g, '\\u003c')}</script>`
             : '';
-        const html = HTML_TEMPLATE
-            .replace('<!--app-html-->', appHtml)
-            .replace('<!--content-state-->', stateScript);
+        const html = applyRouteSeo(
+            HTML_TEMPLATE
+                .replace('<!--app-html-->', appHtml)
+                .replace('<!--content-state-->', stateScript),
+            req.path,
+        );
         res.set('Content-Type', 'text/html; charset=utf-8').send(html);
     } catch (e) {
         console.error('SSR render error:', e);
