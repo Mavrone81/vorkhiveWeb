@@ -2,6 +2,7 @@ import express from 'express';
 import cors from 'cors';
 import rateLimit from 'express-rate-limit';
 import multer from 'multer';
+import Anthropic from '@anthropic-ai/sdk';
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
@@ -274,6 +275,61 @@ Visitors can start free or book a demo on the Contact page (/contact). Existing 
 const SYSTEM_PROMPT_TAIL = `YOUR JOB
 Answer visitor questions about Vorkhive's HRMS (leave, claims, attendance, payroll, CPF/MOM/IRAS compliance), highlight relevant benefits for Singapore teams, and guide interested visitors to start free, book a demo, or contact the team. Be warm, concise (2-3 short sentences), and helpful. If you don't know something or the visitor wants a human, share the contact details above. Only discuss Vorkhive and Singapore HR/payroll topics; politely redirect anything off-topic.`;
 
+// Claude API (preferred): fast, high quality. Falls back to local Ollama if the
+// key is unset or the API errors before any text streams.
+const ANTHROPIC_API_KEY = process.env.ANTHROPIC_API_KEY || '';
+const CLAUDE_MODEL = process.env.CLAUDE_MODEL || 'claude-haiku-4-5';
+const anthropic = ANTHROPIC_API_KEY ? new Anthropic({ apiKey: ANTHROPIC_API_KEY }) : null;
+
+async function streamClaude(history, write) {
+    const stream = anthropic.messages.stream({
+        model: CLAUDE_MODEL,
+        max_tokens: 400,
+        system: buildSystemPrompt(),
+        messages: history.map((m) => ({
+            role: m.role === 'assistant' ? 'assistant' : 'user',
+            content: m.content,
+        })),
+    });
+    stream.on('text', (t) => write(t));
+    await stream.finalMessage();
+}
+
+async function streamOllama(history, write) {
+    const upstream = await fetch(`${OLLAMA_URL}/api/chat`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+            model: OLLAMA_MODEL,
+            stream: true,
+            keep_alive: OLLAMA_KEEPALIVE,
+            messages: [{ role: 'system', content: buildSystemPrompt() }, ...history],
+            options: { temperature: 0.4, num_predict: 220, num_ctx: 2048 },
+        }),
+    });
+    if (!upstream.ok || !upstream.body) throw new Error(`Ollama responded ${upstream.status}`);
+
+    // Ollama streams newline-delimited JSON; forward only the text content.
+    const reader = upstream.body.getReader();
+    const decoder = new TextDecoder();
+    let buffer = '';
+    for (;;) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        buffer += decoder.decode(value, { stream: true });
+        let nl;
+        while ((nl = buffer.indexOf('\n')) >= 0) {
+            const line = buffer.slice(0, nl).trim();
+            buffer = buffer.slice(nl + 1);
+            if (!line) continue;
+            try {
+                const obj = JSON.parse(line);
+                if (obj.message?.content) write(obj.message.content);
+            } catch { /* ignore partial/non-JSON lines */ }
+        }
+    }
+}
+
 app.post('/api/chat', chatLimiter, async (req, res) => {
     const incoming = Array.isArray(req.body?.messages) ? req.body.messages : [];
     // Keep the last 10 turns, sanitise roles/content, cap length.
@@ -289,44 +345,23 @@ app.post('/api/chat', chatLimiter, async (req, res) => {
     res.setHeader('Content-Type', 'text/plain; charset=utf-8');
     res.setHeader('Cache-Control', 'no-cache');
 
+    let wroteAny = false;
+    const write = (t) => { if (t) { wroteAny = true; res.write(t); } };
+
+    // 1) Try Claude first.
+    if (anthropic) {
+        try {
+            await streamClaude(history, write);
+            return res.end();
+        } catch (error) {
+            console.error('Claude API error, falling back to Ollama:', error?.message || error);
+            if (wroteAny) return res.end(); // partial output already sent; can't restart
+        }
+    }
+
+    // 2) Fall back to local Ollama.
     try {
-        const upstream = await fetch(`${OLLAMA_URL}/api/chat`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                model: OLLAMA_MODEL,
-                stream: true,
-                keep_alive: OLLAMA_KEEPALIVE,
-                messages: [{ role: 'system', content: buildSystemPrompt() }, ...history],
-                options: { temperature: 0.4, num_predict: 220, num_ctx: 2048 },
-            }),
-        });
-
-        if (!upstream.ok || !upstream.body) {
-            console.error('Ollama responded', upstream.status);
-            if (!res.headersSent) res.status(502);
-            return res.end('The assistant is unavailable right now.');
-        }
-
-        // Ollama streams newline-delimited JSON; forward only the text content.
-        const reader = upstream.body.getReader();
-        const decoder = new TextDecoder();
-        let buffer = '';
-        for (;;) {
-            const { done, value } = await reader.read();
-            if (done) break;
-            buffer += decoder.decode(value, { stream: true });
-            let nl;
-            while ((nl = buffer.indexOf('\n')) >= 0) {
-                const line = buffer.slice(0, nl).trim();
-                buffer = buffer.slice(nl + 1);
-                if (!line) continue;
-                try {
-                    const obj = JSON.parse(line);
-                    if (obj.message?.content) res.write(obj.message.content);
-                } catch { /* ignore partial/non-JSON lines */ }
-            }
-        }
+        await streamOllama(history, write);
         res.end();
     } catch (error) {
         console.error('Error in /api/chat:', error);
