@@ -65,10 +65,11 @@ app.use((req, res, next) => {
 app.use(express.json());
 
 // Rate limits to curb abuse / API scraping / LLM resource exhaustion.
-const ipKey = (req) => req.ip;
-app.use('/api/', rateLimit({ windowMs: 60_000, max: 100, standardHeaders: true, legacyHeaders: false, keyGenerator: ipKey }));
-const chatLimiter = rateLimit({ windowMs: 60_000, max: 20, standardHeaders: true, legacyHeaders: false, keyGenerator: ipKey });
-const contactLimiter = rateLimit({ windowMs: 60_000, max: 6, standardHeaders: true, legacyHeaders: false, keyGenerator: ipKey });
+// Default keyGenerator uses req.ip (real client IP via trust proxy) with
+// IPv6-safe normalisation.
+app.use('/api/', rateLimit({ windowMs: 60_000, max: 100, standardHeaders: true, legacyHeaders: false }));
+const chatLimiter = rateLimit({ windowMs: 60_000, max: 20, standardHeaders: true, legacyHeaders: false });
+const contactLimiter = rateLimit({ windowMs: 60_000, max: 6, standardHeaders: true, legacyHeaders: false });
 
 // Require the admin token (Bearer header or ?token=) to read stored contacts.
 function requireAdmin(req, res, next) {
