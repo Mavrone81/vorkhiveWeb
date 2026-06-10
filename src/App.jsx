@@ -34,7 +34,7 @@ export default function App() {
             <p className="sub">{hero.subtitle}</p>
             <div className="hero-cta">
               <CtaButton label={hero.ctaPrimary} to="register" className="btn btn-primary" />
-              <CtaButton label={hero.ctaSecondary} to="contact" className="btn btn-ghost" />
+              <CtaButton label={hero.ctaSecondary} to="demo" className="btn btn-ghost" />
             </div>
             <p className="trust-line"><Check s={17} sw={2.5} />{hero.trustLine}</p>
 
@@ -270,7 +270,7 @@ export default function App() {
             <p>{finalCta.sub}</p>
             <div className="hero-cta">
               <CtaButton label={finalCta.ctaPrimary} to="register" className="btn btn-lime" />
-              <CtaButton label={finalCta.ctaSecondary} to="contact" className="btn btn-ghost" style={{ background: 'transparent', color: '#fff', borderColor: 'rgba(255,255,255,.4)' }} />
+              <CtaButton label={finalCta.ctaSecondary} to="demo" className="btn btn-ghost" style={{ background: 'transparent', color: '#fff', borderColor: 'rgba(255,255,255,.4)' }} />
             </div>
             <p className="trust-line"><Check s={17} sw={2.5} />{finalCta.trustLine}</p>
           </div>

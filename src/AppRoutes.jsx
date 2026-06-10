@@ -7,6 +7,7 @@ import Success from './Success.jsx';
 import Layout from './Layout.jsx';
 import PayrollSingapore from './pages/PayrollSingapore.jsx';
 import CpfPayroll from './pages/CpfPayroll.jsx';
+import BookDemo from './pages/BookDemo.jsx';
 import { ContentProvider } from './content/ContentContext.jsx';
 
 // Shared app tree used by both the client (hydration) and the
@@ -20,6 +21,7 @@ export default function AppRoutes({ content }) {
           <Route path="/" element={<App />} />
           <Route path="/payroll-singapore" element={<PayrollSingapore />} />
           <Route path="/cpf-payroll" element={<CpfPayroll />} />
+          <Route path="/book" element={<BookDemo />} />
           <Route path="/contact" element={<Contact />} />
           <Route path="/admin" element={<Admin />} />
           <Route path="/success" element={<Success />} />

@@ -207,6 +207,126 @@ app.get('/api/contacts', requireAdmin, (req, res) => {
     }
 });
 
+// ---- Demo bookings --------------------------------------------------------
+const BOOKINGS_FILE = path.join(__dirname, 'bookings.json');
+const PERIODS = [
+    { id: 1, label: '8:00 AM – 10:00 AM', start: '08:00', end: '10:00' },
+    { id: 2, label: '11:00 AM – 1:00 PM', start: '11:00', end: '13:00' },
+    { id: 3, label: '2:00 PM – 4:00 PM', start: '14:00', end: '16:00' },
+    { id: 4, label: '5:00 PM – 7:00 PM', start: '17:00', end: '19:00' },
+    { id: 5, label: '8:00 PM – 10:00 PM', start: '20:00', end: '22:00' },
+];
+const periodById = (id) => PERIODS.find((p) => p.id === Number(id));
+const sgtToday = () => new Date(Date.now() + 8 * 3600 * 1000).toISOString().slice(0, 10);
+function readBookings() { try { return JSON.parse(fs.readFileSync(BOOKINGS_FILE, 'utf8')) || []; } catch { return []; } }
+function writeBookings(b) { try { fs.writeFileSync(BOOKINGS_FILE, JSON.stringify(b, null, 2)); } catch (e) { console.error('bookings write:', e.message); } }
+const slotTaken = (bookings, date, period) => bookings.some((b) => b.date === date && Number(b.period) === Number(period) && b.status !== 'declined');
+
+function buildIcs(b) {
+    const p = periodById(b.period);
+    const [y, m, d] = b.date.split('-');
+    const dt = (t) => `${y}${m}${d}T${t.replace(':', '')}00`;
+    const stamp = new Date().toISOString().replace(/[-:]/g, '').slice(0, 15) + 'Z';
+    return [
+        'BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//Vorkhive//Demo//EN', 'CALSCALE:GREGORIAN', 'METHOD:REQUEST',
+        'BEGIN:VTIMEZONE', 'TZID:Asia/Singapore', 'BEGIN:STANDARD', 'TZOFFSETFROM:+0800', 'TZOFFSETTO:+0800', 'TZNAME:+08', 'DTSTART:19700101T000000', 'END:STANDARD', 'END:VTIMEZONE',
+        'BEGIN:VEVENT', `UID:demo-${b.id}@vorkhive.com`, `DTSTAMP:${stamp}`,
+        `DTSTART;TZID=Asia/Singapore:${dt(p.start)}`, `DTEND;TZID=Asia/Singapore:${dt(p.end)}`,
+        'SUMMARY:Vorkhive Product Demo', 'DESCRIPTION:Your Vorkhive HRMS demo. We will follow up with a meeting link.', 'LOCATION:Online',
+        'ORGANIZER;CN=Vorkhive:mailto:samuel@vorkhive.com', `ATTENDEE;CN=${b.name};RSVP=TRUE:mailto:${b.email}`,
+        'STATUS:CONFIRMED', 'END:VEVENT', 'END:VCALENDAR',
+    ].join('\r\n');
+}
+async function sendInvite(b) {
+    const p = periodById(b.period);
+    const ics = buildIcs(b);
+    await mailer.sendMail({
+        from: '"Vorkhive" <Dev@vorkhive.com>',
+        to: b.email,
+        subject: `Your Vorkhive demo is confirmed — ${b.date}, ${p.label} (SGT)`,
+        text: `Hi ${b.name},\n\nYour Vorkhive demo is confirmed for ${b.date}, ${p.label} (Singapore time). A calendar invite is attached — we'll follow up with a meeting link.\n\nSee you then!\nThe Vorkhive team`,
+        html: `<p>Hi ${b.name},</p><p>Your Vorkhive demo is <strong>confirmed</strong> for <strong>${b.date}</strong>, <strong>${p.label}</strong> (Singapore time). The calendar invite is attached — add it to your calendar and we'll follow up with a meeting link.</p><p>See you then!<br>The Vorkhive team</p>`,
+        icalEvent: { method: 'REQUEST', filename: 'vorkhive-demo.ics', content: ics },
+        attachments: [{ filename: 'vorkhive-demo.ics', content: ics, contentType: 'text/calendar; method=REQUEST' }],
+    });
+}
+
+// Public: which periods are free on a given date.
+app.get('/api/slots', (req, res) => {
+    const date = String(req.query.date || '').slice(0, 10);
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) return res.status(400).json({ error: 'Invalid date' });
+    const bookings = readBookings();
+    res.json({ date, periods: PERIODS.map((p) => ({ id: p.id, label: p.label, available: !slotTaken(bookings, date, p.id) })) });
+});
+
+// Public: request a demo at a date + period.
+app.post('/api/book', contactLimiter, async (req, res) => {
+    try {
+        const name = String(req.body?.name || '').trim().slice(0, 120);
+        const email = String(req.body?.email || '').trim().slice(0, 160);
+        const company = String(req.body?.company || '').trim().slice(0, 120);
+        const phone = String(req.body?.phone || '').trim().slice(0, 40);
+        const notes = String(req.body?.notes || '').trim().slice(0, 1000);
+        const date = String(req.body?.date || '').slice(0, 10);
+        const period = Number(req.body?.period);
+        if (!name || !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) return res.status(400).json({ error: 'Please enter your name and a valid email.' });
+        if (!/^\d{4}-\d{2}-\d{2}$/.test(date) || !periodById(period)) return res.status(400).json({ error: 'Please choose a valid date and time.' });
+        if (date < sgtToday()) return res.status(400).json({ error: 'Please choose a future date.' });
+        const bookings = readBookings();
+        if (slotTaken(bookings, date, period)) return res.status(409).json({ error: 'That time was just taken — please pick another slot.' });
+        const booking = { id: Date.now().toString(), createdAt: new Date().toISOString(), name, email, company, phone, notes, date, period, status: 'pending' };
+        bookings.push(booking);
+        writeBookings(bookings);
+        const p = periodById(period);
+        mailer.sendMail({
+            from: '"Vorkhive Website" <Dev@vorkhive.com>',
+            to: 'samuel@vorkhive.com, enquires@vorkhive.com',
+            subject: `New demo booking — ${name} (${company || '—'}) · ${date} ${p.label}`,
+            text: `New demo requested.\n\nName: ${name}\nEmail: ${email}\nCompany: ${company || '—'}\nPhone: ${phone || '—'}\nDate: ${date}\nTime: ${p.label} (SGT)\nNotes: ${notes || 'None'}\n\nConfirm or decline in the admin → Demos tab.`,
+        }).catch((e) => console.error('booking mail:', e.message));
+        if (slackEnabled) slackPost(`:calendar: New demo booking\n${name} (${company || '—'}) · ${email}\n${date} · ${p.label} (SGT)\nConfirm/decline in admin → Demos`).catch(() => {});
+        res.status(201).json({ ok: true, id: booking.id });
+    } catch (e) {
+        console.error('book error:', e);
+        res.status(500).json({ error: 'Could not save your booking. Please try again.' });
+    }
+});
+
+// Admin: list bookings.
+app.get('/api/bookings', requireAdmin, (req, res) => {
+    const bookings = readBookings().map((b) => ({ ...b, periodLabel: periodById(b.period)?.label || '' }));
+    bookings.sort((a, b) => (a.date === b.date ? a.period - b.period : a.date.localeCompare(b.date)));
+    res.json(bookings);
+});
+
+// Admin: confirm a booking (optionally on a different date/period) + email invite.
+app.post('/api/bookings/:id/confirm', requireAdmin, async (req, res) => {
+    const bookings = readBookings();
+    const b = bookings.find((x) => x.id === req.params.id);
+    if (!b) return res.status(404).json({ error: 'Not found' });
+    const newDate = String(req.body?.date || '').slice(0, 10);
+    const newPeriod = Number(req.body?.period);
+    if (/^\d{4}-\d{2}-\d{2}$/.test(newDate)) b.date = newDate;
+    if (periodById(newPeriod)) b.period = newPeriod;
+    if (slotTaken(bookings.filter((x) => x.id !== b.id), b.date, b.period)) return res.status(409).json({ error: 'Another booking already holds that slot.' });
+    b.status = 'confirmed';
+    b.confirmedAt = new Date().toISOString();
+    writeBookings(bookings);
+    try { await sendInvite(b); b.invited = true; writeBookings(bookings); }
+    catch (e) { console.error('invite send failed:', e.message); return res.status(207).json({ ok: true, invited: false, error: 'Confirmed, but the invite email failed to send.', booking: b }); }
+    res.json({ ok: true, invited: true, booking: b });
+});
+
+// Admin: decline a booking (frees the slot).
+app.post('/api/bookings/:id/decline', requireAdmin, (req, res) => {
+    const bookings = readBookings();
+    const b = bookings.find((x) => x.id === req.params.id);
+    if (!b) return res.status(404).json({ error: 'Not found' });
+    b.status = 'declined';
+    writeBookings(bookings);
+    res.json({ ok: true });
+});
+
 // Create Xendit Invoice Session
 app.post('/api/create-checkout-session', async (req, res) => {
     try {
@@ -556,6 +676,11 @@ const ROUTE_SEO = {
             ['Is Vorkhive payroll IRAS compliant?', 'Vorkhive produces IRAS-ready year-end reporting (IR8A), so filing is straightforward.'],
             ['How long does setup take?', 'Most Singapore teams are live within a day and run their first CPF-compliant payroll the same week.'],
         ],
+    },
+    '/book': {
+        title: 'Book a Vorkhive demo',
+        description: 'Pick a date and time for a live Vorkhive HRMS demo. We confirm by email with a calendar invite. Singapore time.',
+        canonical: 'https://vorkhive.com/book',
     },
     '/cpf-payroll': {
         title: 'CPF Payroll Software — Automatic CPF Calculation | Vorkhive',

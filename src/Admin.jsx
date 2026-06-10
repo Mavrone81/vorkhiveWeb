@@ -136,7 +136,7 @@ function Admin() {
     );
   }
 
-  const TABS = [['content', 'Site content'], ['contacts', 'Contacts & branding'], ['leads', 'Leads'], ['usage', 'API usage']];
+  const TABS = [['content', 'Site content'], ['contacts', 'Contacts & branding'], ['leads', 'Leads'], ['demos', 'Demos'], ['usage', 'API usage']];
 
   return (
     <div style={{ background: '#F4F5FA', minHeight: '100vh', fontFamily: 'Inter, system-ui, sans-serif', paddingBottom: 80 }}>
@@ -345,6 +345,7 @@ function Admin() {
         )}
 
         {tab === 'leads' && <Leads contacts={contacts} />}
+        {tab === 'demos' && <Demos token={token} />}
         {tab === 'usage' && <Usage token={token} />}
       </div>
     </div>
@@ -397,6 +398,88 @@ function Usage({ token }) {
           </tbody>
         </table>
       </div>
+    </div>
+  );
+}
+
+const DEMO_PERIODS = [
+  { id: 1, label: '8:00 AM – 10:00 AM' },
+  { id: 2, label: '11:00 AM – 1:00 PM' },
+  { id: 3, label: '2:00 PM – 4:00 PM' },
+  { id: 4, label: '5:00 PM – 7:00 PM' },
+  { id: 5, label: '8:00 PM – 10:00 PM' },
+];
+
+function Demos({ token }) {
+  const [list, setList] = useState(null);
+  const [err, setErr] = useState('');
+  const [busy, setBusy] = useState('');
+  const [edit, setEdit] = useState({});
+
+  const load = () => fetch('/api/bookings', { headers: { Authorization: `Bearer ${token}` } })
+    .then((r) => (r.ok ? r.json() : Promise.reject(new Error('load'))))
+    .then(setList)
+    .catch(() => setErr('Could not load bookings.'));
+  useEffect(() => { load(); }, [token]);
+
+  async function act(id, action) {
+    setBusy(id + action); setErr('');
+    const e = edit[id];
+    const body = action === 'confirm' ? JSON.stringify(e || {}) : undefined;
+    try {
+      const res = await fetch(`/api/bookings/${id}/${action}`, { method: 'POST', headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' }, body });
+      const j = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(j.error || 'Action failed.');
+      if (action === 'confirm' && j.invited === false) setErr(j.error || 'Confirmed, but the invite email failed to send.');
+      await load();
+    } catch (e2) { setErr(e2.message); } finally { setBusy(''); }
+  }
+
+  const badge = (s) => ({ pending: ['#92400e', '#fef3c7'], confirmed: ['#166534', '#dcfce7'], declined: ['#991b1b', '#fee2e2'] }[s] || ['#475569', '#f1f5f9']);
+
+  if (err && !list) return <div style={{ color: '#dc2626' }}>{err}</div>;
+  if (!list) return <div style={{ color: '#64748b' }}>Loading…</div>;
+
+  return (
+    <div>
+      {err && <p style={{ color: '#dc2626', fontSize: '.9rem' }}>{err}</p>}
+      <p style={{ fontSize: '.85rem', color: '#64748b', margin: '0 0 12px' }}>
+        Demo requests. <strong>Confirm</strong> emails the visitor a calendar invite (Singapore time) and blocks that slot; <strong>Decline</strong> frees it. {list.length} total.
+      </p>
+      {list.length === 0 ? (
+        <div style={{ padding: 30, textAlign: 'center', color: '#94a3b8', background: '#fff', borderRadius: 12, border: '1px solid #e2e8f0' }}>No demo bookings yet.</div>
+      ) : (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+          {list.map((b) => {
+            const [fg, bg] = badge(b.status);
+            const e = edit[b.id] || { date: b.date, period: b.period };
+            return (
+              <div key={b.id} style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: 12, padding: 14 }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', flexWrap: 'wrap', gap: 8 }}>
+                  <div>
+                    <div style={{ fontWeight: 700 }}>{b.name}{b.company && <span style={{ color: '#64748b', fontWeight: 400 }}> · {b.company}</span>}</div>
+                    <div style={{ fontSize: '.85rem', color: '#475569' }}>{b.email}{b.phone && ` · ${b.phone}`}</div>
+                    <div style={{ fontSize: '.9rem', marginTop: 4 }}>📅 <strong>{b.date}</strong> · {b.periodLabel}</div>
+                    {b.notes && <div style={{ fontSize: '.85rem', color: '#64748b', marginTop: 4 }}>“{b.notes}”</div>}
+                  </div>
+                  <span style={{ alignSelf: 'flex-start', background: bg, color: fg, padding: '3px 10px', borderRadius: 999, fontSize: '.72rem', fontWeight: 700, textTransform: 'uppercase' }}>{b.status}{b.invited ? ' · invited' : ''}</span>
+                </div>
+                {b.status === 'pending' && (
+                  <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap', marginTop: 12, paddingTop: 12, borderTop: '1px solid #eef0f4' }}>
+                    <span style={{ fontSize: '.8rem', color: '#64748b' }}>Confirm for:</span>
+                    <input type="date" value={e.date} onChange={(ev) => setEdit({ ...edit, [b.id]: { ...e, date: ev.target.value } })} style={{ ...inp, width: 'auto', padding: '6px 8px' }} />
+                    <select value={e.period} onChange={(ev) => setEdit({ ...edit, [b.id]: { ...e, period: Number(ev.target.value) } })} style={{ ...inp, width: 'auto', padding: '6px 8px' }}>
+                      {DEMO_PERIODS.map((p) => <option key={p.id} value={p.id}>{p.label}</option>)}
+                    </select>
+                    <button type="button" disabled={!!busy} onClick={() => act(b.id, 'confirm')} style={{ ...btn, background: '#4f46e5', color: '#fff', border: 'none' }}>{busy === b.id + 'confirm' ? 'Sending…' : 'Confirm & send invite'}</button>
+                    <button type="button" disabled={!!busy} onClick={() => act(b.id, 'decline')} style={btn}>Decline</button>
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      )}
     </div>
   );
 }

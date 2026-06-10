@@ -14,7 +14,7 @@ export default function CpfPayroll() {
         </p>
         <div className="cta-row">
           <CtaButton label="Start free — no card needed" to="register" className="btn btn-primary" />
-          <CtaButton label="Book a 15-min demo" to="contact" className="btn btn-ghost" />
+          <CtaButton label="Book a 15-min demo" to="demo" className="btn btn-ghost" />
         </div>
 
         <h2>Automatic CPF calculation, every pay run</h2>

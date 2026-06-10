@@ -17,9 +17,10 @@ export const Check = ({ s = 16, sw = 3 }) => (
   <svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={sw} aria-hidden="true"><path d="M20 6L9 17l-5-5" /></svg>
 );
 
-// `to`: 'register' (sign-up) or 'contact' (contact form). Default sign-up.
+// `to`: 'register' (sign-up), 'contact' (contact form), or 'demo' (book a demo).
 export function CtaButton({ label, to = 'register', className, style }) {
   if (to === 'contact') return <Link to="/contact" className={className} style={style}>{label}</Link>;
+  if (to === 'demo') return <Link to="/book" className={className} style={style}>{label}</Link>;
   return <a href={REGISTER_URL} className={className} style={style}>{label}</a>;
 }
 
