@@ -19,6 +19,8 @@ dist-ssr
 
 # Runtime contact-form data (server-managed, persistent; see contacts.example.json)
 /contacts.json
+/content.json
+/uploads/
 /data/
 
 # Design reference assets (mockups, SEO strategy) — not part of the build

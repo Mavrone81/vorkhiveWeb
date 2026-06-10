@@ -24,3 +24,5 @@ services:
       - "127.0.0.1:4998:4998"
     volumes:
       - ./data/contacts.json:/app/contacts.json
+      - ./data/content.json:/app/content.json
+      - ./data/uploads:/app/uploads

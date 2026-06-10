@@ -1,6 +1,7 @@
 import express from 'express';
 import cors from 'cors';
 import rateLimit from 'express-rate-limit';
+import multer from 'multer';
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
@@ -62,7 +63,7 @@ app.use((req, res, next) => {
     next();
 });
 
-app.use(express.json());
+app.use(express.json({ limit: '2mb' }));
 
 // Rate limits to curb abuse / API scraping / LLM resource exhaustion.
 // Default keyGenerator uses req.ip (real client IP via trust proxy) with
@@ -88,6 +89,63 @@ app.use(express.static(path.join(__dirname, 'dist')));
 if (!fs.existsSync(DATA_FILE)) {
     fs.writeFileSync(DATA_FILE, JSON.stringify([], null, 2));
 }
+
+// ---- CMS: editable content + image uploads (persistent, bind-mounted) ------
+const CONTENT_FILE = path.join(__dirname, 'content.json');
+const UPLOAD_DIR = path.join(__dirname, 'uploads');
+if (!fs.existsSync(UPLOAD_DIR)) fs.mkdirSync(UPLOAD_DIR, { recursive: true });
+
+function readContent() {
+    try {
+        if (!fs.existsSync(CONTENT_FILE)) return {};
+        return JSON.parse(fs.readFileSync(CONTENT_FILE, 'utf8')) || {};
+    } catch {
+        return {};
+    }
+}
+
+// Public: the site reads saved content overrides (merged over code defaults client-side).
+app.get('/api/content', (req, res) => {
+    res.json(readContent());
+});
+
+// Admin: save the full content object.
+app.put('/api/content', requireAdmin, (req, res) => {
+    const body = req.body;
+    if (!body || typeof body !== 'object' || Array.isArray(body)) {
+        return res.status(400).json({ error: 'Invalid content payload' });
+    }
+    try {
+        fs.writeFileSync(CONTENT_FILE, JSON.stringify(body, null, 2));
+        res.json({ ok: true });
+    } catch (e) {
+        console.error('Error saving content:', e);
+        res.status(500).json({ error: 'Failed to save content' });
+    }
+});
+
+// Serve uploaded images.
+app.use('/uploads', express.static(UPLOAD_DIR, { maxAge: '7d' }));
+
+// Admin: image upload (logo / section images).
+const ALLOWED_IMG = new Set(['image/png', 'image/jpeg', 'image/webp', 'image/gif', 'image/svg+xml']);
+const upload = multer({
+    storage: multer.diskStorage({
+        destination: (req, file, cb) => cb(null, UPLOAD_DIR),
+        filename: (req, file, cb) => {
+            const ext = (path.extname(file.originalname) || '').toLowerCase().replace(/[^.a-z0-9]/g, '');
+            const base = path.basename(file.originalname, path.extname(file.originalname))
+                .toLowerCase().replace(/[^a-z0-9]+/g, '-').slice(0, 40) || 'img';
+            cb(null, `${base}-${Date.now()}${ext}`);
+        },
+    }),
+    limits: { fileSize: 5 * 1024 * 1024 },
+    fileFilter: (req, file, cb) => cb(null, ALLOWED_IMG.has(file.mimetype)),
+});
+app.post('/api/upload', requireAdmin, upload.single('file'), (req, res) => {
+    if (!req.file) return res.status(400).json({ error: 'No image uploaded (png/jpg/webp/gif/svg, max 5MB)' });
+    res.json({ url: `/uploads/${req.file.filename}` });
+});
 
 // ... rest of the API routes ...
 
@@ -179,7 +237,25 @@ const OLLAMA_URL = process.env.OLLAMA_URL || 'http://host.docker.internal:11434'
 const OLLAMA_MODEL = process.env.OLLAMA_MODEL || 'qwen2.5:1.5b';
 const OLLAMA_KEEPALIVE = process.env.OLLAMA_KEEPALIVE || '15m';
 
-const SYSTEM_PROMPT = `You are Vorka, the friendly sales and support assistant for Vorkhive (https://vorkhive.com).
+// Build the prompt fresh each request so contact details stay in sync with the
+// content the admin edits (single source of truth).
+function buildSystemPrompt() {
+    const c = readContent();
+    const ct = (c && c.contact) || {};
+    const phone = ct.phone || '+6587007621';
+    const wa = ct.whatsapp ? `+${String(ct.whatsapp).replace(/\D/g, '')}` : '+6587007621';
+    const e1 = ct.email1 || 'samuel@vorkhive.com';
+    const e2 = ct.email2 || 'enquires@vorkhive.com';
+    return SYSTEM_PROMPT_HEAD + `
+
+CONTACT THE TEAM
+- Phone: ${phone}
+- WhatsApp: ${wa}
+- Email: ${e1} or ${e2}
+` + SYSTEM_PROMPT_TAIL;
+}
+
+const SYSTEM_PROMPT_HEAD = `You are Vorka, the friendly sales and support assistant for Vorkhive (https://vorkhive.com).
 
 ABOUT VORKHIVE
 Vorkhive is the all-in-one, Singapore-compliant HRMS (HR Management System). It runs leave, claims, attendance, payroll and CPF compliance from one platform, with employee self-service your whole team actually enjoys using. MOM-ready out of the box. Most teams are live within a day and cut HR admin by about 40%.
@@ -193,14 +269,9 @@ PRICING (per user / month, in SGD; free to start, no credit card)
 - Starter: S$5/user/month — leave, staff directory, claims & attendance (up to 5 users).
 - Growth: S$9/user/month (most popular) — unlimited users, full payroll with CPF, IRAS export, training & appraisals.
 - Enterprise: S$15/user/month — everything in Growth plus SSO, dedicated success manager and full API access.
-Visitors can start free or book a demo on the Contact page (/contact). Existing customers log in at https://app.vorkhive.com.
+Visitors can start free or book a demo on the Contact page (/contact). Existing customers log in at https://app.vorkhive.com.`;
 
-CONTACT THE TEAM
-- Phone: 8969 0872
-- WhatsApp: +65 8886 6506
-- Email: Samuel@vorkhive.com or enquires@vorkhive.com
-
-YOUR JOB
+const SYSTEM_PROMPT_TAIL = `YOUR JOB
 Answer visitor questions about Vorkhive's HRMS (leave, claims, attendance, payroll, CPF/MOM/IRAS compliance), highlight relevant benefits for Singapore teams, and guide interested visitors to start free, book a demo, or contact the team. Be warm, concise (2-3 short sentences), and helpful. If you don't know something or the visitor wants a human, share the contact details above. Only discuss Vorkhive and Singapore HR/payroll topics; politely redirect anything off-topic.`;
 
 app.post('/api/chat', chatLimiter, async (req, res) => {
@@ -226,7 +297,7 @@ app.post('/api/chat', chatLimiter, async (req, res) => {
                 model: OLLAMA_MODEL,
                 stream: true,
                 keep_alive: OLLAMA_KEEPALIVE,
-                messages: [{ role: 'system', content: SYSTEM_PROMPT }, ...history],
+                messages: [{ role: 'system', content: buildSystemPrompt() }, ...history],
                 options: { temperature: 0.4, num_predict: 220, num_ctx: 2048 },
             }),
         });
