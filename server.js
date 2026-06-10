@@ -83,7 +83,7 @@ function requireAdmin(req, res, next) {
 }
 
 // Serve static files from the 'dist' directory
-app.use(express.static(path.join(__dirname, 'dist')));
+app.use(express.static(path.join(__dirname, 'dist'), { index: false }));
 
 // Ensure the JSON file exists
 if (!fs.existsSync(DATA_FILE)) {
@@ -335,17 +335,34 @@ app.post('/api/chat', chatLimiter, async (req, res) => {
     }
 });
 
-// SPA routing with SSG: serve the prerendered HTML for a route when it exists
-// (so crawlers get full content), otherwise fall back to the home shell.
+// SSR: render each page on request with the live (admin-edited) content so
+// crawlers and the first paint get the real, current content. Falls back to a
+// client-rendered shell if the SSR bundle is unavailable or rendering throws.
 const DIST = path.join(__dirname, 'dist');
+let HTML_TEMPLATE = '<!doctype html><html><head><!--content-state--></head><body><div id="root"><!--app-html--></div><script type="module" src="/assets/main.js"></script></body></html>';
+try { HTML_TEMPLATE = fs.readFileSync(path.join(DIST, 'index.html'), 'utf8'); } catch (e) { console.error('index.html template not found:', e.message); }
+// Load the SSR bundle without blocking startup (avoids top-level await).
+let ssr = null;
+import('./dist-ssr/entry-server.js')
+    .then((m) => { ssr = m; console.log('SSR bundle loaded'); })
+    .catch((e) => console.error('SSR bundle not available, using client-render fallback:', e.message));
+
 app.get(/(.*)/, (req, res) => {
-    const rel = req.path === '/' ? 'index.html' : path.join(req.path.replace(/^\/+|\/+$/g, ''), 'index.html');
-    const candidate = path.join(DIST, rel);
-    // Guard against path traversal; only serve files inside dist/.
-    if (candidate.startsWith(DIST + path.sep) && fs.existsSync(candidate)) {
-        return res.sendFile(candidate);
+    try {
+        const content = ssr ? ssr.mergeContent(ssr.defaultContent, readContent()) : null;
+        const appHtml = ssr && ssr.render ? ssr.render(req.path, content) : '';
+        const stateScript = content
+            ? `<script>window.__CONTENT__=${JSON.stringify(content).replace(/</g, '\\u003c')}</script>`
+            : '';
+        const html = HTML_TEMPLATE
+            .replace('<!--app-html-->', appHtml)
+            .replace('<!--content-state-->', stateScript);
+        res.set('Content-Type', 'text/html; charset=utf-8').send(html);
+    } catch (e) {
+        console.error('SSR render error:', e);
+        res.set('Content-Type', 'text/html; charset=utf-8')
+            .send(HTML_TEMPLATE.replace('<!--app-html-->', '').replace('<!--content-state-->', ''));
     }
-    res.sendFile(path.join(DIST, 'index.html'));
 });
 
 app.listen(PORT, HOST, () => {

@@ -1,26 +1,18 @@
-import { createContext, useContext, useEffect, useState } from 'react';
-import { defaultContent, mergeContent } from './defaults';
+import { createContext, useContext, useState } from 'react';
+import { defaultContent } from './defaults';
 
 const ContentContext = createContext(defaultContent);
 
-export function ContentProvider({ children }) {
-  // Start from defaults so the prerendered HTML and first client render match
-  // (no hydration mismatch). Apply saved overrides after mount.
-  const [content, setContent] = useState(defaultContent);
+function resolveInitial(initial) {
+  if (initial) return initial;
+  // On the client, the server injects the live (merged) content as window.__CONTENT__
+  // so the first render matches the server-rendered HTML (clean hydration, no flash).
+  if (typeof window !== 'undefined' && window.__CONTENT__) return window.__CONTENT__;
+  return defaultContent;
+}
 
-  useEffect(() => {
-    let alive = true;
-    fetch('/api/content')
-      .then((r) => (r.ok ? r.json() : null))
-      .then((overrides) => {
-        if (alive && overrides && typeof overrides === 'object') {
-          setContent(mergeContent(defaultContent, overrides));
-        }
-      })
-      .catch(() => {});
-    return () => { alive = false; };
-  }, []);
-
+export function ContentProvider({ children, initial }) {
+  const [content] = useState(() => resolveInitial(initial));
   return <ContentContext.Provider value={content}>{children}</ContentContext.Provider>;
 }
 

@@ -78,6 +78,16 @@ function Admin() {
     }
   }
 
+  function handleLogout() {
+    setIsAuth(false);
+    setToken('');
+    setPassword('');
+    setDraft(defaultContent);
+    setContacts([]);
+    setTab('content');
+    setSaveMsg('');
+  }
+
   async function save() {
     setSaving(true); setSaveMsg('');
     try {
@@ -142,6 +152,7 @@ function Admin() {
           {saveMsg && <span style={{ fontSize: '.82rem', color: saveMsg.startsWith('Saved') ? '#16a34a' : '#ef4444' }}>{saveMsg}</span>}
           {tab !== 'leads' && <button onClick={save} disabled={saving} style={{ ...btn, background: '#16a34a', color: '#fff', border: 'none' }}>{saving ? 'Saving…' : 'Save changes'}</button>}
           <Link to="/" style={{ fontSize: '.82rem', color: '#64748b' }}>View site ↗</Link>
+          <button onClick={handleLogout} style={{ ...btn, color: '#dc2626', borderColor: '#fecaca' }}>Log out</button>
         </div>
       </div>
 

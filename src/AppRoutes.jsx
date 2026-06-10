@@ -8,10 +8,11 @@ import Layout from './Layout.jsx';
 import { ContentProvider } from './content/ContentContext.jsx';
 
 // Shared app tree used by both the client (hydration) and the
-// server prerender (build-time static HTML).
-export default function AppRoutes() {
+// server (render-on-request SSR). `content` is the live merged content on the
+// server; on the client it's read from window.__CONTENT__ inside ContentProvider.
+export default function AppRoutes({ content }) {
   return (
-    <ContentProvider>
+    <ContentProvider initial={content}>
       <Layout>
         <Routes>
           <Route path="/" element={<App />} />
