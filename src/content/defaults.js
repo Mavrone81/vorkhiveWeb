@@ -7,6 +7,16 @@ export const defaultContent = {
     brandTag: 'SG COMPLIANCE · V2',
     logoImage: '', // empty -> show the "V" mark; otherwise an uploaded image URL
   },
+  seo: {
+    title: 'Vorkhive — Singapore HR & Payroll Software (HRMS)',
+    description: 'The all-in-one HRMS for Singapore. Run leave, claims, attendance, payroll and CPF compliance in one platform. MOM-ready. Start free — no card.',
+  },
+  ui: {
+    nav: { platform: 'Platform', features: 'Features', pricing: 'Pricing', faq: 'FAQ', customers: 'Customers' },
+    signIn: 'Sign in',
+    startFree: 'Start free',
+    language: 'Language',
+  },
   contact: {
     phone: '+6587007621',     // tel: format
     whatsapp: '6587007621',   // wa.me format (digits only)
@@ -88,9 +98,9 @@ export const defaultContent = {
     heading: 'HRMS pricing for Singapore teams',
     sub: "One platform for leave, claims, attendance and payroll — for less than you'd pay for any one of them.",
     plans: [
-      { name: 'Starter', desc: 'For small teams putting HR on autopilot.', price: 'S$5', period: ' /user / mo', featured: false, badge: '', bullets: ['Up to 5 users', 'Leave & staff directory', 'Claims & attendance', 'Community support'], cta: 'Start free' },
-      { name: 'Growth', desc: 'For growing teams that need payroll & compliance.', price: 'S$9', period: ' /user / mo', featured: true, badge: 'Most popular', bullets: ['Unlimited users', 'Full payroll with CPF', 'Digital payslips & IRAS export', 'Training & appraisals', 'Priority support'], cta: 'Start 14-day trial' },
-      { name: 'Enterprise', desc: 'Advanced security and control for larger organizations.', price: 'S$15', period: ' /user / mo', featured: false, badge: '', bullets: ['Everything in Growth', 'Single Sign-On (SSO)', 'Dedicated success manager', 'Full API access'], cta: 'Contact sales' },
+      { name: 'Starter', desc: 'For small teams putting HR on autopilot.', price: 'S$5', period: ' /user / mo', featured: false, badge: '', bullets: ['Up to 5 users', 'Leave & staff directory', 'Claims & attendance', 'Community support'], cta: 'Start free', ctaTo: 'register' },
+      { name: 'Growth', desc: 'For growing teams that need payroll & compliance.', price: 'S$9', period: ' /user / mo', featured: true, badge: 'Most popular', bullets: ['Unlimited users', 'Full payroll with CPF', 'Digital payslips & IRAS export', 'Training & appraisals', 'Priority support'], cta: 'Start 14-day trial', ctaTo: 'register' },
+      { name: 'Enterprise', desc: 'Advanced security and control for larger organizations.', price: 'S$15', period: ' /user / mo', featured: false, badge: '', bullets: ['Everything in Growth', 'Single Sign-On (SSO)', 'Dedicated success manager', 'Full API access'], cta: 'Contact sales', ctaTo: 'contact' },
     ],
   },
   faq: {

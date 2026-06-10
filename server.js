@@ -241,20 +241,24 @@ const OLLAMA_KEEPALIVE = process.env.OLLAMA_KEEPALIVE || '15m';
 
 // Build the prompt fresh each request so contact details stay in sync with the
 // content the admin edits (single source of truth).
-function buildSystemPrompt() {
+const LANG_NAMES = { zh: 'Simplified Chinese (简体中文)', ms: 'Bahasa Melayu', ta: 'Tamil (தமிழ்)', th: 'Thai (ภาษาไทย)' };
+function buildSystemPrompt(lang) {
     const c = readContent();
     const ct = (c && c.contact) || {};
     const phone = ct.phone || '+6587007621';
     const wa = ct.whatsapp ? `+${String(ct.whatsapp).replace(/\D/g, '')}` : '+6587007621';
     const e1 = ct.email1 || 'samuel@vorkhive.com';
     const e2 = ct.email2 || 'enquires@vorkhive.com';
+    const langLine = LANG_NAMES[lang]
+        ? `\n\nThe visitor is on the ${LANG_NAMES[lang]} version of the site. Reply in ${LANG_NAMES[lang]} by default; if the visitor clearly writes in another language, match their language.`
+        : '';
     return SYSTEM_PROMPT_HEAD + `
 
 CONTACT THE TEAM
 - Phone: ${phone}
 - WhatsApp: ${wa}
 - Email: ${e1} or ${e2}
-` + SYSTEM_PROMPT_TAIL;
+` + SYSTEM_PROMPT_TAIL + langLine;
 }
 
 const SYSTEM_PROMPT_HEAD = `You are Vorka, the friendly sales and support assistant for Vorkhive (https://vorkhive.com).
@@ -350,11 +354,11 @@ function recordUsage(inTok, outTok) {
     } catch (e) { console.error('usage write:', e.message); }
 }
 
-async function streamClaude(history, write) {
+async function streamClaude(history, write, lang) {
     const stream = anthropic.messages.stream({
         model: CLAUDE_MODEL,
         max_tokens: 400,
-        system: buildSystemPrompt(),
+        system: buildSystemPrompt(lang),
         messages: history.map((m) => ({
             role: m.role === 'assistant' ? 'assistant' : 'user',
             content: m.content,
@@ -365,7 +369,7 @@ async function streamClaude(history, write) {
     if (final?.usage) recordUsage(final.usage.input_tokens, final.usage.output_tokens);
 }
 
-async function streamOllama(history, write) {
+async function streamOllama(history, write, lang) {
     const upstream = await fetch(`${OLLAMA_URL}/api/chat`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -373,7 +377,7 @@ async function streamOllama(history, write) {
             model: OLLAMA_MODEL,
             stream: true,
             keep_alive: OLLAMA_KEEPALIVE,
-            messages: [{ role: 'system', content: buildSystemPrompt() }, ...history],
+            messages: [{ role: 'system', content: buildSystemPrompt(lang) }, ...history],
             options: { temperature: 0.4, num_predict: 220, num_ctx: 2048 },
         }),
     });
@@ -426,6 +430,8 @@ app.post('/api/chat', chatLimiter, async (req, res) => {
         }
     }
 
+    const lang = String(req.body?.lang || 'en').slice(0, 5);
+
     res.setHeader('Content-Type', 'text/plain; charset=utf-8');
     res.setHeader('Cache-Control', 'no-cache');
 
@@ -435,7 +441,7 @@ app.post('/api/chat', chatLimiter, async (req, res) => {
     // 1) Try Claude first.
     if (anthropic) {
         try {
-            await streamClaude(history, write);
+            await streamClaude(history, write, lang);
             return res.end();
         } catch (error) {
             console.error('Claude API error, falling back to Ollama:', error?.message || error);
@@ -445,7 +451,7 @@ app.post('/api/chat', chatLimiter, async (req, res) => {
 
     // 2) Fall back to local Ollama.
     try {
-        await streamOllama(history, write);
+        await streamOllama(history, write, lang);
         res.end();
     } catch (error) {
         console.error('Error in /api/chat:', error);
@@ -585,19 +591,61 @@ function applyRouteSeo(html, route) {
         .replace('</head>', `${faqJson ? `<script type="application/ld+json">${faqJson}</script>` : ''}</head>`);
 }
 
+// ---- i18n: /zh /ms /ta /th language versions ------------------------------
+const I18N = {
+    en: { html: 'en-SG', hreflang: 'en-sg' },
+    zh: { html: 'zh-Hans-SG', hreflang: 'zh' },
+    ms: { html: 'ms-SG', hreflang: 'ms' },
+    ta: { html: 'ta-SG', hreflang: 'ta' },
+    th: { html: 'th', hreflang: 'th' },
+};
+function parseLang(p) {
+    const m = p.match(/^\/(zh|ms|ta|th)(?=\/|$)/);
+    return m ? { lang: m[1], rest: p.slice(m[0].length) || '/' } : { lang: 'en', rest: p };
+}
+function buildLangContent(lang) {
+    if (!ssr) return null;
+    const base = ssr.mergeContent(ssr.defaultContent, readContent());
+    const c = lang === 'en' ? base : ssr.mergeContent(base, (ssr.translations && ssr.translations[lang]) || {});
+    c._lang = lang;
+    return c;
+}
+const homeUrl = (lang) => (lang === 'en' ? 'https://vorkhive.com/' : `https://vorkhive.com/${lang}`);
+function homeHreflang() {
+    const tags = ['en', 'zh', 'ms', 'ta', 'th']
+        .map((l) => `<link rel="alternate" hreflang="${I18N[l].hreflang}" href="${homeUrl(l)}" />`)
+        .join('');
+    return `${tags}<link rel="alternate" hreflang="x-default" href="${homeUrl('en')}" />`;
+}
+function applyHomeSeo(html, content, lang) {
+    const seo = content.seo || {};
+    const url = homeUrl(lang);
+    return html
+        .replace(/<title>[^<]*<\/title>/, `<title>${escHtml(seo.title || '')}</title>`)
+        .replace(/(<meta name="description" content=")[^"]*(")/, `$1${escAttr(seo.description || '')}$2`)
+        .replace(/(<link rel="canonical" href=")[^"]*(")/, `$1${url}$2`)
+        .replace(/(<meta property="og:title" content=")[^"]*(")/, `$1${escAttr(seo.title || '')}$2`)
+        .replace(/(<meta property="og:description" content=")[^"]*(")/, `$1${escAttr(seo.description || '')}$2`)
+        .replace(/(<meta property="og:url" content=")[^"]*(")/, `$1${url}$2`)
+        .replace(/(<meta name="twitter:title" content=")[^"]*(")/, `$1${escAttr(seo.title || '')}$2`)
+        .replace(/(<meta name="twitter:description" content=")[^"]*(")/, `$1${escAttr(seo.description || '')}$2`)
+        .replace(/\s*<link rel="alternate" hreflang="[^"]*" href="[^"]*"\s*\/>/g, '')
+        .replace('</head>', `${homeHreflang()}</head>`);
+}
+
 app.get(/(.*)/, (req, res) => {
     try {
-        const content = ssr ? ssr.mergeContent(ssr.defaultContent, readContent()) : null;
-        const appHtml = ssr && ssr.render ? ssr.render(req.path, content) : '';
+        const { lang, rest } = parseLang(req.path);
+        const content = buildLangContent(lang);
+        const appHtml = ssr && ssr.render ? ssr.render(req.path, content, lang) : '';
         const stateScript = content
-            ? `<script>window.__CONTENT__=${JSON.stringify(content).replace(/</g, '\\u003c')}</script>`
+            ? `<script>window.__CONTENT__=${JSON.stringify(content).replace(/</g, '\\u003c')};window.__LANG__=${JSON.stringify(lang)}</script>`
             : '';
-        const html = applyRouteSeo(
-            HTML_TEMPLATE
-                .replace('<!--app-html-->', appHtml)
-                .replace('<!--content-state-->', stateScript),
-            req.path,
-        );
+        let html = HTML_TEMPLATE
+            .replace('<!--app-html-->', appHtml)
+            .replace('<!--content-state-->', stateScript)
+            .replace(/<html lang="[^"]*"/, `<html lang="${(I18N[lang] || I18N.en).html}"`);
+        html = (rest === '/' || rest === '') ? applyHomeSeo(html, content, lang) : applyRouteSeo(html, rest);
         res.set('Content-Type', 'text/html; charset=utf-8').send(html);
     } catch (e) {
         console.error('SSR render error:', e);

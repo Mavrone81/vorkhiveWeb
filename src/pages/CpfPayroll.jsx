@@ -13,8 +13,8 @@ export default function CpfPayroll() {
           payslips, and keeps you ready for IRAS — so payday in Singapore is a few clicks.
         </p>
         <div className="cta-row">
-          <CtaButton label="Start free — no card needed" className="btn btn-primary" />
-          <CtaButton label="Book a 15-min demo" className="btn btn-ghost" />
+          <CtaButton label="Start free — no card needed" to="register" className="btn btn-primary" />
+          <CtaButton label="Book a 15-min demo" to="contact" className="btn btn-ghost" />
         </div>
 
         <h2>Automatic CPF calculation, every pay run</h2>
@@ -64,8 +64,8 @@ export default function CpfPayroll() {
         </div>
 
         <div className="cta-row" style={{ marginTop: 30 }}>
-          <CtaButton label="Start free" className="btn btn-primary" />
-          <CtaButton label="Talk to our team" className="btn btn-ghost" />
+          <CtaButton label="Start free" to="register" className="btn btn-primary" />
+          <CtaButton label="Talk to our team" to="contact" className="btn btn-ghost" />
         </div>
       </section>
     </MarketingShell>

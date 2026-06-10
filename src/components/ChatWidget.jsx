@@ -114,6 +114,7 @@ export default function ChatWidget() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           sessionId: sid,
+          lang: (typeof window !== 'undefined' && window.__LANG__) || 'en',
           messages: history.filter((m, i) => !(i === 0 && m.role === 'assistant')),
         }),
       });

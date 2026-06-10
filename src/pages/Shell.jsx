@@ -5,15 +5,22 @@ import { useContent } from '../content/ContentContext.jsx';
 
 export const REGISTER_URL = 'https://app.vorkhive.com/register';
 
+export const LANGS = [
+  { code: 'en', label: 'English', path: '/' },
+  { code: 'zh', label: '中文', path: '/zh' },
+  { code: 'ms', label: 'Bahasa Melayu', path: '/ms' },
+  { code: 'ta', label: 'தமிழ்', path: '/ta' },
+  { code: 'th', label: 'ไทย', path: '/th' },
+];
+
 export const Check = ({ s = 16, sw = 3 }) => (
   <svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={sw} aria-hidden="true"><path d="M20 6L9 17l-5-5" /></svg>
 );
 
-export function CtaButton({ label, className, style }) {
-  const toContact = /contact|sales|demo|talk/i.test(label || '');
-  return toContact
-    ? <Link to="/contact" className={className} style={style}>{label}</Link>
-    : <a href={REGISTER_URL} className={className} style={style}>{label}</a>;
+// `to`: 'register' (sign-up) or 'contact' (contact form). Default sign-up.
+export function CtaButton({ label, to = 'register', className, style }) {
+  if (to === 'contact') return <Link to="/contact" className={className} style={style}>{label}</Link>;
+  return <a href={REGISTER_URL} className={className} style={style}>{label}</a>;
 }
 
 export function Logo() {
@@ -29,10 +36,43 @@ export function Logo() {
   );
 }
 
-const NAV = [['/#platform', 'Platform'], ['/#features', 'Features'], ['/#pricing', 'Pricing'], ['/#faq', 'FAQ'], ['/#testimonials', 'Customers']];
+export function LanguageSwitcher() {
+  const c = useContent();
+  const cur = c._lang || 'en';
+  const [open, setOpen] = useState(false);
+  const current = LANGS.find((l) => l.code === cur) || LANGS[0];
+  return (
+    <div style={{ position: 'relative' }}>
+      <button onClick={() => setOpen((o) => !o)} aria-haspopup="true" aria-expanded={open} aria-label="Language"
+        style={{ display: 'inline-flex', alignItems: 'center', gap: 7, background: 'none', border: '1.5px solid var(--line)', borderRadius: 12, padding: '9px 13px', cursor: 'pointer', fontFamily: 'inherit', fontWeight: 600, fontSize: '.9rem', color: 'var(--ink)' }}>
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true"><circle cx="12" cy="12" r="10" /><path d="M2 12h20" /><path d="M12 2a15 15 0 0 1 0 20 15 15 0 0 1 0-20" /></svg>
+        {current.label}
+      </button>
+      {open && (
+        <div style={{ position: 'absolute', top: 'calc(100% + 6px)', right: 0, background: '#fff', border: '1px solid var(--line)', borderRadius: 12, boxShadow: 'var(--shadow)', padding: 6, minWidth: 170, zIndex: 60 }}>
+          {LANGS.map((l) => (
+            <a key={l.code} href={l.path} style={{ display: 'block', padding: '9px 12px', borderRadius: 8, color: l.code === cur ? 'var(--violet)' : 'var(--ink)', fontWeight: l.code === cur ? 700 : 500, fontSize: '.92rem' }}>{l.label}</a>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
 
 export function SiteHeader() {
+  const c = useContent();
+  const ui = c.ui || {};
+  const navL = ui.nav || {};
+  const lang = c._lang || 'en';
+  const base = lang === 'en' ? '' : `/${lang}`;
   const [open, setOpen] = useState(false);
+  const NAV = [
+    [`${base}/#platform`, navL.platform || 'Platform'],
+    [`${base}/#features`, navL.features || 'Features'],
+    [`${base}/#pricing`, navL.pricing || 'Pricing'],
+    [`${base}/#faq`, navL.faq || 'FAQ'],
+    [`${base}/#testimonials`, navL.customers || 'Customers'],
+  ];
   return (
     <header>
       <div className="wrap">
@@ -40,8 +80,9 @@ export function SiteHeader() {
           <Logo />
           <div className="navlinks">{NAV.map(([h, l]) => <a key={h} href={h}>{l}</a>)}</div>
           <div className="navcta">
-            <a href="https://app.vorkhive.com" className="btn btn-ghost">Sign in</a>
-            <CtaButton label="Start free" className="btn btn-primary" />
+            <LanguageSwitcher />
+            <a href="https://app.vorkhive.com" className="btn btn-ghost">{ui.signIn || 'Sign in'}</a>
+            <CtaButton label={ui.startFree || 'Start free'} to="register" className="btn btn-primary" />
           </div>
           <button className="menu-toggle" aria-label={open ? 'Close menu' : 'Open menu'} aria-expanded={open} onClick={() => setOpen((o) => !o)}>
             {open
@@ -52,8 +93,9 @@ export function SiteHeader() {
       </div>
       <div className={`mobile-menu${open ? ' open' : ''}`}>
         {NAV.map(([h, l]) => <a key={h} href={h} onClick={() => setOpen(false)}>{l}</a>)}
-        <a href="https://app.vorkhive.com" className="btn btn-ghost">Sign in</a>
-        <CtaButton label="Start free" className="btn btn-primary" />
+        <div style={{ padding: '10px 0' }}><LanguageSwitcher /></div>
+        <a href="https://app.vorkhive.com" className="btn btn-ghost">{ui.signIn || 'Sign in'}</a>
+        <CtaButton label={ui.startFree || 'Start free'} to="register" className="btn btn-primary" />
       </div>
     </header>
   );
@@ -85,7 +127,6 @@ export function SiteFooter() {
   );
 }
 
-// Wrapper for standalone marketing/SEO pages (header + footer + scroll reveal).
 export function MarketingShell({ children }) {
   useEffect(() => {
     const io = new IntersectionObserver((entries) => {

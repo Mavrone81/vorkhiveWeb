@@ -4,9 +4,11 @@ import { BrowserRouter } from 'react-router-dom';
 import AppRoutes from './AppRoutes.jsx';
 
 const root = document.getElementById('root');
+const lang = (typeof window !== 'undefined' && window.__LANG__) || 'en';
+const basename = lang !== 'en' ? `/${lang}` : undefined;
 const tree = (
   <StrictMode>
-    <BrowserRouter>
+    <BrowserRouter basename={basename}>
       <AppRoutes />
     </BrowserRouter>
   </StrictMode>

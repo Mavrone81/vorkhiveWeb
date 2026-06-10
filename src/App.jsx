@@ -1,42 +1,15 @@
-import { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { useEffect } from 'react';
 import './redesign.css';
 import { useContent } from './content/ContentContext.jsx';
+import { SiteHeader, SiteFooter, Check, CtaButton } from './pages/Shell.jsx';
 
-const Check = ({ s = 16, sw = 3 }) => (
-  <svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={sw} aria-hidden="true"><path d="M20 6L9 17l-5-5" /></svg>
-);
 const Bell = () => (
   <svg className="bell" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9" /><path d="M13.7 21a2 2 0 01-3.4 0" /></svg>
 );
-function Logo() {
-  const c = useContent();
-  const b = c.branding || {};
-  return (
-    <Link to="/" className="logo" aria-label={`${b.brandName || 'Vorkhive'} home`}>
-      {b.logoImage
-        ? <img src={b.logoImage} alt={b.brandName || 'Vorkhive'} style={{ height: 36, borderRadius: 8 }} />
-        : <span className="mark" aria-hidden="true">{(b.brandName || 'V').charAt(0)}</span>}
-      <span>{b.brandName || 'Vorkhive'}<small>{b.brandTag || ''}</small></span>
-    </Link>
-  );
-}
-
-const REGISTER_URL = 'https://app.vorkhive.com/register';
-// "Start free" / "Start trial" CTAs go straight to sign-up; "Book a demo" /
-// "Contact sales" go to the contact form.
-function CtaButton({ label, className, style }) {
-  const toContact = /contact|sales|demo|talk/i.test(label || '');
-  return toContact
-    ? <Link to="/contact" className={className} style={style}>{label}</Link>
-    : <a href={REGISTER_URL} className={className} style={style}>{label}</a>;
-}
 
 export default function App() {
   const c = useContent();
-  const { hero, logos, intro, problem, pillars, features, metrics, steps, testimonials, pricing, faq, finalCta, footer } = c;
-  const [mobileOpen, setMobileOpen] = useState(false);
-  const NAV = [['#platform', 'Platform'], ['#features', 'Features'], ['#pricing', 'Pricing'], ['#faq', 'FAQ'], ['#testimonials', 'Customers']];
+  const { hero, logos, intro, problem, pillars, features, metrics, steps, testimonials, pricing, faq, finalCta } = c;
 
   useEffect(() => {
     const io = new IntersectionObserver((entries) => {
@@ -50,30 +23,7 @@ export default function App() {
     <div className="vh-root">
       <a className="skip" href="#main">Skip to content</a>
 
-      <header>
-        <div className="wrap">
-          <nav aria-label="Primary">
-            <Logo />
-            <div className="navlinks">
-              {NAV.map(([href, label]) => <a key={href} href={href}>{label}</a>)}
-            </div>
-            <div className="navcta">
-              <a href="https://app.vorkhive.com" className="btn btn-ghost">Sign in</a>
-              <CtaButton label="Start free" className="btn btn-primary" />
-            </div>
-            <button className="menu-toggle" aria-label={mobileOpen ? 'Close menu' : 'Open menu'} aria-expanded={mobileOpen} onClick={() => setMobileOpen((o) => !o)}>
-              {mobileOpen
-                ? <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true"><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>
-                : <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true"><line x1="3" y1="6" x2="21" y2="6" /><line x1="3" y1="12" x2="21" y2="12" /><line x1="3" y1="18" x2="21" y2="18" /></svg>}
-            </button>
-          </nav>
-        </div>
-        <div className={`mobile-menu${mobileOpen ? ' open' : ''}`}>
-          {NAV.map(([href, label]) => <a key={href} href={href} onClick={() => setMobileOpen(false)}>{label}</a>)}
-          <a href="https://app.vorkhive.com" className="btn btn-ghost">Sign in</a>
-          <CtaButton label="Start free" className="btn btn-primary" />
-        </div>
-      </header>
+      <SiteHeader />
 
       <main id="main">
         {/* HERO */}
@@ -83,8 +33,8 @@ export default function App() {
             <h1 id="hero-h1">{hero.headlineLead}<span className="accent">{hero.headlineAccent}</span></h1>
             <p className="sub">{hero.subtitle}</p>
             <div className="hero-cta">
-              <CtaButton label={hero.ctaPrimary} className="btn btn-primary" />
-              <CtaButton label={hero.ctaSecondary} className="btn btn-ghost" />
+              <CtaButton label={hero.ctaPrimary} to="register" className="btn btn-primary" />
+              <CtaButton label={hero.ctaSecondary} to="contact" className="btn btn-ghost" />
             </div>
             <p className="trust-line"><Check s={17} sw={2.5} />{hero.trustLine}</p>
 
@@ -290,7 +240,7 @@ export default function App() {
                   <div className="pdesc">{p.desc}</div>
                   <div className="amt">{p.price}<small>{p.period}</small></div>
                   <ul>{p.bullets.map((b, j) => <li key={j}><Check />{b}</li>)}</ul>
-                  <CtaButton label={p.cta} className={`btn ${p.featured ? 'btn-primary' : 'btn-ghost'}`} />
+                  <CtaButton label={p.cta} to={p.ctaTo} className={`btn ${p.featured ? 'btn-primary' : 'btn-ghost'}`} />
                 </article>
               ))}
             </div>
@@ -319,33 +269,15 @@ export default function App() {
             <h2 id="cta-h2">{finalCta.heading}</h2>
             <p>{finalCta.sub}</p>
             <div className="hero-cta">
-              <CtaButton label={finalCta.ctaPrimary} className="btn btn-lime" />
-              <CtaButton label={finalCta.ctaSecondary} className="btn btn-ghost" style={{ background: 'transparent', color: '#fff', borderColor: 'rgba(255,255,255,.4)' }} />
+              <CtaButton label={finalCta.ctaPrimary} to="register" className="btn btn-lime" />
+              <CtaButton label={finalCta.ctaSecondary} to="contact" className="btn btn-ghost" style={{ background: 'transparent', color: '#fff', borderColor: 'rgba(255,255,255,.4)' }} />
             </div>
             <p className="trust-line"><Check s={17} sw={2.5} />{finalCta.trustLine}</p>
           </div>
         </section>
       </main>
 
-      <footer>
-        <div className="wrap">
-          <div className="foot-grid">
-            <div className="foot-brand">
-              <Logo />
-              <p>{footer.brandText}</p>
-            </div>
-            {footer.columns.map((col, i) => (
-              <nav className="foot-col" aria-label={col.title} key={i}>
-                <h4>{col.title}</h4>
-                {col.links.map((lnk, j) => (
-                  (lnk.href.startsWith('/') && !lnk.href.includes('#')) ? <Link to={lnk.href} key={j}>{lnk.label}</Link> : <a href={lnk.href} key={j}>{lnk.label}</a>
-                ))}
-              </nav>
-            ))}
-          </div>
-          <div className="foot-bot"><span>{footer.copyright}</span><span>{footer.legal}</span></div>
-        </div>
-      </footer>
+      <SiteFooter />
     </div>
   );
 }
