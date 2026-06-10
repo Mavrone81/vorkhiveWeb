@@ -3,6 +3,7 @@ import cors from 'cors';
 import rateLimit from 'express-rate-limit';
 import multer from 'multer';
 import Anthropic from '@anthropic-ai/sdk';
+import crypto from 'crypto';
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
@@ -64,7 +65,7 @@ app.use((req, res, next) => {
     next();
 });
 
-app.use(express.json({ limit: '2mb' }));
+app.use(express.json({ limit: '2mb', verify: (req, _res, buf) => { req.rawBody = buf; } }));
 
 // Rate limits to curb abuse / API scraping / LLM resource exhaustion.
 // Default keyGenerator uses req.ip (real client IP via trust proxy) with
@@ -277,6 +278,50 @@ Answer visitor questions about Vorkhive's HRMS (leave, claims, attendance, payro
 
 Reply in plain conversational text. Do NOT use markdown formatting — no **bold**, no #headings, no bullet asterisks, no backticks. Write prices and details inline in normal sentences.`;
 
+// ---- Live human handoff via Slack -----------------------------------------
+const SLACK_BOT_TOKEN = process.env.SLACK_BOT_TOKEN || '';
+const SLACK_SIGNING_SECRET = process.env.SLACK_SIGNING_SECRET || '';
+const SLACK_CHANNEL_ID = process.env.SLACK_CHANNEL_ID || '';
+const slackEnabled = !!(SLACK_BOT_TOKEN && SLACK_CHANNEL_ID);
+
+// In-memory conversation state (single-process app). sessionId -> conversation;
+// threadIndex maps a Slack thread back to its session.
+const convos = new Map();
+const threadIndex = new Map();
+const CONVO_TTL_MS = 2 * 60 * 60 * 1000;
+function getConvo(id) {
+    let c = convos.get(id);
+    if (!c) { c = { id, mode: 'bot', threadTs: null, agentMsgs: [], lastSeen: Date.now() }; convos.set(id, c); }
+    c.lastSeen = Date.now();
+    return c;
+}
+setInterval(() => {
+    const now = Date.now();
+    for (const [id, c] of convos) {
+        if (now - c.lastSeen > CONVO_TTL_MS) { convos.delete(id); if (c.threadTs) threadIndex.delete(c.threadTs); }
+    }
+}, 10 * 60 * 1000).unref?.();
+
+async function slackPost(text, threadTs) {
+    const r = await fetch('https://slack.com/api/chat.postMessage', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json; charset=utf-8', Authorization: `Bearer ${SLACK_BOT_TOKEN}` },
+        body: JSON.stringify({ channel: SLACK_CHANNEL_ID, text, thread_ts: threadTs }),
+    });
+    const j = await r.json();
+    if (!j.ok) throw new Error(`Slack ${j.error}`);
+    return j.ts;
+}
+function verifySlackSignature(req) {
+    if (!SLACK_SIGNING_SECRET) return false;
+    const ts = req.get('x-slack-request-timestamp');
+    const sig = req.get('x-slack-signature') || '';
+    if (!ts || Math.abs(Date.now() / 1000 - Number(ts)) > 300) return false;
+    const base = `v0:${ts}:${req.rawBody ? req.rawBody.toString('utf8') : ''}`;
+    const mine = 'v0=' + crypto.createHmac('sha256', SLACK_SIGNING_SECRET).update(base).digest('hex');
+    try { return crypto.timingSafeEqual(Buffer.from(mine), Buffer.from(sig)); } catch { return false; }
+}
+
 // Claude API (preferred): fast, high quality. Falls back to local Ollama if the
 // key is unset or the API errors before any text streams.
 const ANTHROPIC_API_KEY = process.env.ANTHROPIC_API_KEY || '';
@@ -344,6 +389,20 @@ app.post('/api/chat', chatLimiter, async (req, res) => {
         return res.status(400).json({ error: 'No message provided' });
     }
 
+    // If a human has taken over this conversation, relay the message to the
+    // Slack thread instead of answering with the bot.
+    const sessionId = String(req.body?.sessionId || '').slice(0, 64);
+    if (sessionId && slackEnabled) {
+        const c = convos.get(sessionId);
+        if (c && c.mode === 'human' && c.threadTs) {
+            const last = history[history.length - 1];
+            if (last && last.role === 'user') {
+                slackPost(`💬 Visitor: ${last.content}`, c.threadTs).catch((e) => console.error('relay error:', e.message));
+            }
+            return res.status(204).end();
+        }
+    }
+
     res.setHeader('Content-Type', 'text/plain; charset=utf-8');
     res.setHeader('Cache-Control', 'no-cache');
 
@@ -369,6 +428,64 @@ app.post('/api/chat', chatLimiter, async (req, res) => {
         console.error('Error in /api/chat:', error);
         if (!res.headersSent) res.status(502);
         res.end('The assistant is unavailable right now. Please email enquires@vorkhive.com.');
+    }
+});
+
+// ---- Human handoff endpoints ----------------------------------------------
+// Visitor requests a human: open (or reuse) a Slack thread with the transcript.
+app.post('/api/handoff', async (req, res) => {
+    const sessionId = String(req.body?.sessionId || '').slice(0, 64);
+    if (!sessionId) return res.status(400).json({ error: 'sessionId required' });
+    if (!slackEnabled) return res.json({ ok: false, fallback: true });
+    const c = getConvo(sessionId);
+    try {
+        if (!c.threadTs) {
+            const hist = Array.isArray(req.body?.messages) ? req.body.messages.slice(-12) : [];
+            const transcript = hist
+                .map((m) => `${m.role === 'assistant' ? 'Bot' : 'Visitor'}: ${String(m.content || '').slice(0, 500)}`)
+                .join('\n');
+            const header = `:large_green_circle: New website chat needs a human.\nReply *in this thread* to talk to the visitor live.\n\n${transcript || '(no messages yet)'}`;
+            c.threadTs = await slackPost(header);
+            threadIndex.set(c.threadTs, sessionId);
+        }
+        c.mode = 'human';
+        res.json({ ok: true });
+    } catch (e) {
+        console.error('handoff error:', e.message);
+        res.status(502).json({ ok: false, fallback: true });
+    }
+});
+
+// Widget polls for new agent (human) messages since `cursor`.
+app.get('/api/poll', (req, res) => {
+    const sessionId = String(req.query.sessionId || '').slice(0, 64);
+    const cursor = Math.max(0, parseInt(req.query.cursor, 10) || 0);
+    const c = convos.get(sessionId);
+    if (!c) return res.json({ mode: 'bot', messages: [], cursor: 0 });
+    c.lastSeen = Date.now();
+    res.json({ mode: c.mode, messages: c.agentMsgs.slice(cursor), cursor: c.agentMsgs.length });
+});
+
+// Slack Events API: a human reply in the thread -> deliver to the visitor.
+app.post('/api/slack/events', (req, res) => {
+    const body = req.body || {};
+    if (body.type === 'url_verification') return res.json({ challenge: body.challenge });
+    if (!verifySlackSignature(req)) return res.status(401).end();
+    res.json({ ok: true }); // ack within Slack's 3s window
+    try {
+        const e = body.event;
+        if (!e || e.type !== 'message' || e.bot_id || e.subtype) return; // ignore bot/system/edits
+        const threadTs = e.thread_ts;
+        if (!threadTs) return;
+        const sessionId = threadIndex.get(threadTs);
+        const c = sessionId && convos.get(sessionId);
+        if (!c) return;
+        const text = String(e.text || '').trim();
+        if (!text) return;
+        c.agentMsgs.push({ text });
+        c.lastSeen = Date.now();
+    } catch (err) {
+        console.error('slack event error:', err.message);
     }
 });
 
