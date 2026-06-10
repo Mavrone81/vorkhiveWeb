@@ -41,6 +41,21 @@ export default function ChatWidget() {
     if (open && inputRef.current) inputRef.current.focus();
   }, [open]);
 
+  // Deep-link: app.vorkhive.com's billing "Contact sales" links here with
+  // ?chat=sales (or #chat) to open the assistant straight into a sales chat.
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const wantsChat = new URLSearchParams(window.location.search).get('chat');
+    const hash = window.location.hash;
+    if (!wantsChat && hash !== '#chat' && hash !== '#contact-sales') return;
+    setOpen(true);
+    if (wantsChat === 'sales' || hash === '#contact-sales') {
+      setMessages((prev) => (prev.length <= 1
+        ? [...prev, { role: 'assistant', content: "Looking at the Enterprise plan? Tell me your team size and what you need (SSO, full API, dedicated success manager) and I'll help right here — or I can connect you to a human." }]
+        : prev));
+    }
+  }, []);
+
   // Once a human is engaged, poll for their replies.
   useEffect(() => {
     if (mode !== 'human' || !sid) return undefined;
