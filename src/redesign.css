@@ -159,6 +159,19 @@
 .vh-root .step h3{font-size:1.2rem;margin-bottom:10px}
 .vh-root .step p{color:var(--slate);font-size:.97rem}
 
+/* Accent bands (added for more colour rhythm without hurting readability) */
+.vh-root #features{background:linear-gradient(160deg,#F7F5FF 0%,#fff 62%)}
+.vh-root section:has(.steps){background:linear-gradient(140deg,#1A0B4E 0%,#3A1FB8 58%,#5B3DF5 100%);color:#fff;position:relative;overflow:hidden;padding:96px 0}
+.vh-root section:has(.steps)::before{content:"";position:absolute;top:-150px;right:-120px;width:520px;height:520px;background:radial-gradient(circle,rgba(198,255,77,.15),transparent 60%);pointer-events:none}
+.vh-root section:has(.steps) .wrap{position:relative;z-index:1}
+.vh-root section:has(.steps) .sec-head h2{color:#fff}
+.vh-root section:has(.steps) .sec-head p{color:rgba(255,255,255,.78)}
+.vh-root section:has(.steps) .eyebrow{background:rgba(255,255,255,.12);color:#fff;border:1px solid rgba(255,255,255,.2)}
+.vh-root section:has(.steps) .step{background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12)}
+.vh-root section:has(.steps) .step h3{color:#fff}
+.vh-root section:has(.steps) .step p{color:rgba(255,255,255,.76)}
+.vh-root section:has(.steps) .step .n{background:var(--lime);color:#16142E}
+
 .vh-root .tgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:24px}
 .vh-root .tcard{border:1px solid var(--line);border-radius:var(--radius);padding:30px;background:#fff;display:flex;flex-direction:column}
 .vh-root .stars{color:#FFB23E;margin-bottom:16px;letter-spacing:2px}
