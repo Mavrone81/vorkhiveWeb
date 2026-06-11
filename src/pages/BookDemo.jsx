@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { MarketingShell, Check } from './Shell.jsx';
+import { useContent } from '../content/ContentContext.jsx';
 
 const WEEKDAYS = ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'];
 const MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
@@ -8,6 +9,7 @@ const pad = (n) => String(n).padStart(2, '0');
 const ymd = (d) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
 
 export default function BookDemo() {
+  const t = useContent().pages?.book || {};
   const [mounted, setMounted] = useState(false);
   const [view, setView] = useState(null);
   const [date, setDate] = useState('');
@@ -42,8 +44,8 @@ export default function BookDemo() {
   async function submit(e) {
     e.preventDefault();
     setErr('');
-    if (!date || !period) { setErr('Please choose a date and time slot.'); return; }
-    if (!form.name.trim() || !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(form.email)) { setErr('Please enter your name and a valid email.'); return; }
+    if (!date || !period) { setErr(t.errSlot || 'Please choose a date and time slot.'); return; }
+    if (!form.name.trim() || !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(form.email)) { setErr(t.errName || 'Please enter your name and a valid email.'); return; }
     setSubmitting(true);
     try {
       const res = await fetch('/api/book', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ...form, date, period }) });
@@ -86,49 +88,54 @@ export default function BookDemo() {
     );
   }
 
+  const doneBody = (t.doneBody || "Thanks! We've got your demo request for {date}, {period} (SGT). We'll email {email} to confirm with a calendar invite.")
+    .replace('{date}', date)
+    .replace('{period}', periods.find((p) => p.id === period)?.label || '')
+    .replace('{email}', form.email);
+
   return (
     <MarketingShell>
       <section className="article book">
-        <p className="eyebrow">Book a demo</p>
-        <h1>Book your Vorkhive demo</h1>
-        <p className="lede">Pick a date and a time that suits you — we'll confirm by email with a calendar invite. All times are Singapore time (SGT).</p>
+        <p className="eyebrow">{t.eyebrow || 'Book a demo'}</p>
+        <h1>{t.h1 || 'Book your Vorkhive demo'}</h1>
+        <p className="lede">{t.lede}</p>
 
         {!mounted ? (
-          <p className="book-hint">Loading the calendar…</p>
+          <p className="book-hint">{t.loading || 'Loading the calendar…'}</p>
         ) : done ? (
           <div className="book-done">
             <div className="bd-check"><Check s={26} sw={3} /></div>
-            <h2>Request received 🎉</h2>
-            <p>Thanks {form.name.split(' ')[0]}! We've got your demo request for <strong>{date}</strong>, <strong>{periods.find((p) => p.id === period)?.label}</strong> (SGT). We'll email <strong>{form.email}</strong> to confirm with a calendar invite.</p>
+            <h2>{t.doneTitle || 'Request received 🎉'}</h2>
+            <p>{doneBody}</p>
           </div>
         ) : (
           <form onSubmit={submit} className="book-grid">
             <div>
-              <h3 className="book-step">1 · Choose a date</h3>
+              <h3 className="book-step">{t.step1 || '1 · Choose a date'}</h3>
               {calendar()}
-              <h3 className="book-step">2 · Choose a time {date && <span className="book-date">— {date}</span>}</h3>
-              {!date ? <p className="book-hint">Select a date first.</p> : loadingSlots ? <p className="book-hint">Checking availability…</p> : (
+              <h3 className="book-step">{t.step2 || '2 · Choose a time'} {date && <span className="book-date">— {date}</span>}</h3>
+              {!date ? <p className="book-hint">{t.selectDate || 'Select a date first.'}</p> : loadingSlots ? <p className="book-hint">{t.checking || 'Checking availability…'}</p> : (
                 <div className="slots">
                   {periods.map((p) => (
                     <button type="button" key={p.id} disabled={!p.available} className={`slot${period === p.id ? ' sel' : ''}${!p.available ? ' taken' : ''}`} onClick={() => setPeriod(p.id)}>
-                      <span>{p.label}</span>{!p.available && <span className="slot-x">Booked</span>}
+                      <span>{p.label}</span>{!p.available && <span className="slot-x">{t.booked || 'Booked'}</span>}
                     </button>
                   ))}
                 </div>
               )}
             </div>
             <div>
-              <h3 className="book-step">3 · Your details</h3>
+              <h3 className="book-step">{t.step3 || '3 · Your details'}</h3>
               <div className="book-fields">
-                <input placeholder="Full name *" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
-                <input placeholder="Work email *" type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} />
-                <input placeholder="Company" value={form.company} onChange={(e) => setForm({ ...form, company: e.target.value })} />
-                <input placeholder="Phone (optional)" value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} />
-                <textarea placeholder="Anything you'd like us to cover? (optional)" rows={3} value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} />
+                <input placeholder={t.phName || 'Full name *'} value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
+                <input placeholder={t.phEmail || 'Work email *'} type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} />
+                <input placeholder={t.phCompany || 'Company'} value={form.company} onChange={(e) => setForm({ ...form, company: e.target.value })} />
+                <input placeholder={t.phPhone || 'Phone (optional)'} value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} />
+                <textarea placeholder={t.phNotes || 'Anything you’d like us to cover? (optional)'} rows={3} value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} />
               </div>
               {err && <p className="book-err">{err}</p>}
-              <button type="submit" className="btn btn-primary" disabled={submitting} style={{ width: '100%', justifyContent: 'center' }}>{submitting ? 'Booking…' : 'Request demo'}</button>
-              <p className="book-fine">No charge — we'll confirm by email with a calendar invite. By requesting a demo, you agree to our <Link to="/terms">Terms of Service</Link> and <Link to="/privacy">Privacy Policy</Link>.</p>
+              <button type="submit" className="btn btn-primary" disabled={submitting} style={{ width: '100%', justifyContent: 'center' }}>{submitting ? (t.submitting || 'Booking…') : (t.submit || 'Request demo')}</button>
+              <p className="book-fine">{t.agreePre || "No charge — we'll confirm by email with a calendar invite. By requesting a demo, you agree to our "}<Link to="/terms">{t.agreeTerms || 'Terms of Service'}</Link>{t.agreeAnd || ' and '}<Link to="/privacy">{t.agreePrivacy || 'Privacy Policy'}</Link>{t.agreePost || '.'}</p>
             </div>
           </form>
         )}

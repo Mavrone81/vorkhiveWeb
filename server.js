@@ -770,7 +770,7 @@ function applyHomeSeo(html, content, lang) {
 
 // Inner pages: translated title/meta/FAQ from content (lang-specific) + hreflang
 // for pages that exist in every language; English ROUTE_SEO for the rest.
-const PAGE_KEY_BY_ROUTE = { '/payroll-singapore': 'payroll', '/cpf-payroll': 'cpf' };
+const PAGE_KEY_BY_ROUTE = { '/payroll-singapore': 'payroll', '/cpf-payroll': 'cpf', '/book': 'book', '/contact': 'contact' };
 function pageHreflang(rest) {
     const tags = ['en', 'zh', 'ms', 'ta', 'th']
         .map((l) => `<link rel="alternate" hreflang="${I18N[l].hreflang}" href="${l === 'en' ? 'https://vorkhive.com' : `https://vorkhive.com/${l}`}${rest}" />`)

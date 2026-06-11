@@ -1,8 +1,10 @@
 import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import logoImg from './assets/logo.png';
+import { useContent } from './content/ContentContext.jsx';
 
 function Contact() {
+    const t = useContent().pages?.contact || {};
     const navigate = useNavigate();
     const [formData, setFormData] = useState({
         name: '',
@@ -65,17 +67,17 @@ function Contact() {
                             <div style={{ width: '64px', height: '64px', background: '#10B981', color: 'white', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 1.5rem auto' }}>
                                 <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
                             </div>
-                            <h2 style={{ marginBottom: '1rem' }}>Request Received!</h2>
+                            <h2 style={{ marginBottom: '1rem' }}>{t.doneTitle || 'Request Received!'}</h2>
                             <p style={{ color: 'var(--text-light)', fontSize: '1.125rem', marginBottom: '2rem' }}>
-                                Thank you for your interest in Vorkhive. Our team will review your information and contact you shortly to set up your free trial.
+                                {t.doneBody || 'Thank you for your interest in Vorkhive. Our team will review your information and contact you shortly to set up your free trial.'}
                             </p>
-                            <Link to="/" className="btn btn-primary">Return to Homepage</Link>
+                            <Link to="/" className="btn btn-primary">{t.doneBtn || 'Return to Homepage'}</Link>
                         </div>
                     ) : (
                         <>
                             <div className="section-header" style={{ marginBottom: '2rem', textAlign: 'center' }}>
-                                <h2>Start Your Free Trial</h2>
-                                <p>Fill out the form below and our team will get you set up with everything you need to streamline your operations.</p>
+                                <h2>{t.heading || 'Start Your Free Trial'}</h2>
+                                <p>{t.sub || 'Fill out the form below and our team will get you set up with everything you need to streamline your operations.'}</p>
                             </div>
 
                             <div style={{ background: 'white', padding: '2.5rem', borderRadius: 'var(--radius-xl)', boxShadow: 'var(--shadow-lg)', border: '1px solid var(--border)' }}>
@@ -83,7 +85,7 @@ function Contact() {
 
                                     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem' }}>
                                         <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                                            <label htmlFor="name" style={{ fontWeight: 600, fontSize: '0.875rem' }}>Full Name *</label>
+                                            <label htmlFor="name" style={{ fontWeight: 600, fontSize: '0.875rem' }}>{t.lblName || 'Full Name *'}</label>
                                             <input
                                                 type="text"
                                                 id="name"
@@ -97,7 +99,7 @@ function Contact() {
                                         </div>
 
                                         <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                                            <label htmlFor="email" style={{ fontWeight: 600, fontSize: '0.875rem' }}>Work Email *</label>
+                                            <label htmlFor="email" style={{ fontWeight: 600, fontSize: '0.875rem' }}>{t.lblEmail || 'Work Email *'}</label>
                                             <input
                                                 type="email"
                                                 id="email"
@@ -113,7 +115,7 @@ function Contact() {
 
                                     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem' }}>
                                         <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                                            <label htmlFor="company" style={{ fontWeight: 600, fontSize: '0.875rem' }}>Company Name *</label>
+                                            <label htmlFor="company" style={{ fontWeight: 600, fontSize: '0.875rem' }}>{t.lblCompany || 'Company Name *'}</label>
                                             <input
                                                 type="text"
                                                 id="company"
@@ -127,7 +129,7 @@ function Contact() {
                                         </div>
 
                                         <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                                            <label htmlFor="employees" style={{ fontWeight: 600, fontSize: '0.875rem' }}>Company Size</label>
+                                            <label htmlFor="employees" style={{ fontWeight: 600, fontSize: '0.875rem' }}>{t.lblSize || 'Company Size'}</label>
                                             <select
                                                 id="employees"
                                                 name="employees"
@@ -135,18 +137,18 @@ function Contact() {
                                                 onChange={handleChange}
                                                 style={{ padding: '0.75rem 1rem', borderRadius: 'var(--radius-md)', border: '1px solid var(--border)', fontSize: '1rem', backgroundColor: 'white' }}
                                             >
-                                                <option value="">Select size...</option>
-                                                <option value="1-10">1-10 employees</option>
-                                                <option value="11-50">11-50 employees</option>
-                                                <option value="51-200">51-200 employees</option>
-                                                <option value="201-500">201-500 employees</option>
-                                                <option value="500+">500+ employees</option>
+                                                <option value="">{t.sizeSelect || 'Select size…'}</option>
+                                                <option value="1-10">1-10 {t.sizeUnit || 'employees'}</option>
+                                                <option value="11-50">11-50 {t.sizeUnit || 'employees'}</option>
+                                                <option value="51-200">51-200 {t.sizeUnit || 'employees'}</option>
+                                                <option value="201-500">201-500 {t.sizeUnit || 'employees'}</option>
+                                                <option value="500+">500+ {t.sizeUnit || 'employees'}</option>
                                             </select>
                                         </div>
                                     </div>
 
                                     <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                                        <label htmlFor="message" style={{ fontWeight: 600, fontSize: '0.875rem' }}>How can Vorkhive help your team?</label>
+                                        <label htmlFor="message" style={{ fontWeight: 600, fontSize: '0.875rem' }}>{t.lblMessage || 'How can Vorkhive help your team?'}</label>
                                         <textarea
                                             id="message"
                                             name="message"
@@ -159,10 +161,10 @@ function Contact() {
                                     </div>
 
                                     <button type="submit" className="btn btn-primary btn-lg" style={{ marginTop: '1rem', width: '100%' }} disabled={loading}>
-                                        {loading ? 'Submitting...' : 'Request Free Trial'}
+                                        {loading ? (t.submitting || 'Submitting…') : (t.submit || 'Request Free Trial')}
                                     </button>
                                     <p style={{ textAlign: 'center', fontSize: '0.875rem', color: 'var(--text-light)', margin: 0 }}>
-                                        By submitting this form, you agree to our <Link to="/terms" style={{ color: 'var(--primary, #4f46e5)', fontWeight: 600 }}>Terms of Service</Link> and <Link to="/privacy" style={{ color: 'var(--primary, #4f46e5)', fontWeight: 600 }}>Privacy Policy</Link>.
+                                        {t.agreePre || 'By submitting this form, you agree to our '}<Link to="/terms" style={{ color: 'var(--primary, #4f46e5)', fontWeight: 600 }}>{t.agreeTerms || 'Terms of Service'}</Link>{t.agreeAnd || ' and '}<Link to="/privacy" style={{ color: 'var(--primary, #4f46e5)', fontWeight: 600 }}>{t.agreePrivacy || 'Privacy Policy'}</Link>{t.agreePost || '.'}
                                     </p>
                                 </form>
                             </div>
