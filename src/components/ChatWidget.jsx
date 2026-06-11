@@ -43,6 +43,20 @@ export default function ChatWidget() {
     if (open && inputRef.current) inputRef.current.focus();
   }, [open]);
 
+  // Some browsers (e.g. Edge sleeping tabs / back-forward cache) restore the page
+  // with its JS state frozen instead of reloading. Start the chat fresh on restore.
+  useEffect(() => {
+    const onShow = (e) => {
+      if (!e.persisted) return;
+      setMessages([{ role: 'assistant', content: GREETING }]);
+      setMode('bot');
+      setInput('');
+      setBusy(false);
+    };
+    window.addEventListener('pageshow', onShow);
+    return () => window.removeEventListener('pageshow', onShow);
+  }, []);
+
   // Deep-link: app.vorkhive.com's billing "Contact sales" links here with
   // ?chat=sales (or #chat) to open the assistant straight into a sales chat.
   useEffect(() => {
