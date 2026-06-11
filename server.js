@@ -672,6 +672,7 @@ app.post('/api/handoff', async (req, res) => {
             threadIndex.set(c.threadTs, sessionId);
         }
         c.mode = 'human';
+        c.closed = false;
         saveConvos();
         res.json({ ok: true });
     } catch (e) {
@@ -682,10 +683,27 @@ app.post('/api/handoff', async (req, res) => {
 
 // Visitor handed back to the bot (e.g. no human replied in time). Stop relaying
 // this session to Slack so the assistant answers again.
+const CLOSE_REASONS = {
+    visitor_ended: 'the visitor ended the chat',
+    idle: 'closed after inactivity',
+    closed: 'the visitor closed the page',
+    no_response: 'the visitor left before anyone replied',
+};
 app.post('/api/resume', (req, res) => {
     const sessionId = String(req.body?.sessionId || '').slice(0, 64);
+    const reason = String(req.body?.reason || '').slice(0, 40);
     const c = sessionId && convos.get(sessionId);
-    if (c) { c.mode = 'bot'; c.lastSeen = Date.now(); saveConvos(); }
+    if (c) {
+        c.mode = 'bot';
+        c.lastSeen = Date.now();
+        // Let the team know a handed-off thread is now closed (once).
+        if (c.threadTs && !c.closed) {
+            c.closed = true;
+            const label = CLOSE_REASONS[reason] || 'the chat was closed';
+            slackPost(`:red_circle: Chat closed — ${label}. The visitor is no longer connected, so no need to reply in this thread.`, c.threadTs).catch((e) => console.error('close note:', e.message));
+        }
+        saveConvos();
+    }
     res.json({ ok: true });
 });
 
@@ -891,6 +909,9 @@ app.get(/(.*)/, (req, res) => {
             .replace('<!--content-state-->', stateScript)
             .replace(/<html lang="[^"]*"/, `<html lang="${(I18N[lang] || I18N.en).html}"`);
         html = (rest === '/' || rest === '') ? applyHomeSeo(html, content, lang) : applyInnerSeo(html, rest, content, lang);
+        // Never let the HTML (which references the hashed JS/CSS bundles) go stale,
+        // so browsers always load the current build.
+        res.set('Cache-Control', 'no-cache, must-revalidate');
         res.set('Content-Type', 'text/html; charset=utf-8').send(html);
     } catch (e) {
         console.error('SSR render error:', e);

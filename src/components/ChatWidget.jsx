@@ -71,11 +71,11 @@ export default function ChatWidget() {
   // Keep latest mode/sid for timer callbacks (avoid stale closures).
   useEffect(() => { stateRef.current = { mode, sid }; }, [mode, sid]);
 
-  function endChat() {
+  function endChat(reason) {
     const { mode: m, sid: s } = stateRef.current;
     setAwaitingEnd(false);
     if (m === 'human' && s) {
-      fetch('/api/resume', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ sessionId: s }) }).catch(() => {});
+      fetch('/api/resume', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ sessionId: s, reason: reason || 'idle' }) }).catch(() => {});
     }
     setMode('bot');
     setMessages([{ role: 'assistant', content: GREETING }]);
@@ -95,7 +95,7 @@ export default function ChatWidget() {
   // After the end prompt, close the chat if there's no reply within the grace window.
   useEffect(() => {
     if (!awaitingEnd) return undefined;
-    const t = setTimeout(() => endChat(), END_GRACE_MS);
+    const t = setTimeout(() => endChat('idle'), END_GRACE_MS);
     return () => clearTimeout(t);
   }, [awaitingEnd]);
 
@@ -103,12 +103,20 @@ export default function ChatWidget() {
   useEffect(() => {
     const onHide = () => {
       if (mode === 'human' && sid && navigator.sendBeacon) {
-        navigator.sendBeacon('/api/resume', new Blob([JSON.stringify({ sessionId: sid })], { type: 'application/json' }));
+        navigator.sendBeacon('/api/resume', new Blob([JSON.stringify({ sessionId: sid, reason: 'closed' })], { type: 'application/json' }));
       }
     };
     window.addEventListener('pagehide', onHide);
     return () => window.removeEventListener('pagehide', onHide);
   }, [mode, sid]);
+
+  // On every fresh page load, reconcile the server to bot mode for this session.
+  // Prevents a stale 'human' session (persisted across a reload) from making the
+  // bot silently relay to Slack and look broken. The client always starts fresh.
+  useEffect(() => {
+    if (!sid) return;
+    fetch('/api/resume', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ sessionId: sid, reason: 'closed' }) }).catch(() => {});
+  }, []);
 
   // Deep-link: app.vorkhive.com's billing "Contact sales" links here with
   // ?chat=sales (or #chat) to open the assistant straight into a sales chat.
@@ -157,7 +165,7 @@ export default function ChatWidget() {
     // so the visitor is never left waiting.
     const fallback = setTimeout(async () => {
       if (!alive || humanReplied) return;
-      try { await fetch('/api/resume', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ sessionId: sid }) }); } catch { /* best effort */ }
+      try { await fetch('/api/resume', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ sessionId: sid, reason: 'no_response' }) }); } catch { /* best effort */ }
       if (!alive || humanReplied) return;
       setMode('bot');
       setMessages((prev) => [...prev, { role: 'assistant', content: "Our team isn't online right this second — but I can keep helping! You can also reach us on WhatsApp +65 8700 7621 or email enquires@vorkhive.com." }]);
@@ -206,8 +214,7 @@ export default function ChatWidget() {
       setAwaitingEnd(false);
       if (END_AGREE.test(content)) {
         setMessages((prev) => [...prev, { role: 'user', content }, { role: 'assistant', content: END_GOODBYE }]);
-        if (mode === 'human' && sid) fetch('/api/resume', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ sessionId: sid }) }).catch(() => {});
-        setTimeout(() => endChat(), 4000);
+        setTimeout(() => endChat('visitor_ended'), 4000);
         return;
       }
       // Otherwise the visitor wants to keep going — fall through and handle normally.
