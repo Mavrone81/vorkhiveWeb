@@ -362,7 +362,7 @@ const OLLAMA_KEEPALIVE = process.env.OLLAMA_KEEPALIVE || '15m';
 // Build the prompt fresh each request so contact details stay in sync with the
 // content the admin edits (single source of truth).
 const LANG_NAMES = { zh: 'Simplified Chinese (简体中文)', ms: 'Bahasa Melayu', ta: 'Tamil (தமிழ்)', th: 'Thai (ภาษาไทย)' };
-function buildSystemPrompt(lang) {
+function buildSystemPrompt(lang, pricingText) {
     const c = readContent();
     const ct = (c && c.contact) || {};
     const phone = ct.phone || '+6587007621';
@@ -372,7 +372,11 @@ function buildSystemPrompt(lang) {
     const langLine = LANG_NAMES[lang]
         ? `\n\nThe visitor is on the ${LANG_NAMES[lang]} version of the site. Reply in ${LANG_NAMES[lang]} by default; if the visitor clearly writes in another language, match their language.`
         : '';
-    return SYSTEM_PROMPT_HEAD + `
+    const pricing = pricingText ? `
+
+PRICING (current, in SGD; free to start, no credit card — always use these exact figures):
+${pricingText}` : '';
+    return SYSTEM_PROMPT_HEAD + pricing + `
 
 CONTACT THE TEAM
 - Phone: ${phone}
@@ -391,16 +395,46 @@ Key capabilities:
 - Time & growth: attendance, schedules, training records, appraisals and surveys.
 - Secure: bank-grade encryption, SOC 2, 99.99% uptime.
 
-PRICING (per user / month, in SGD; free to start, no credit card)
-- Starter: S$5/user/month — leave, staff directory, claims & attendance (up to 5 users).
-- Growth: S$9/user/month (most popular) — unlimited users, full payroll with CPF, IRAS export, training & appraisals.
-- Enterprise: S$15/user/month — everything in Growth plus SSO, dedicated success manager and full API access.
 Visitors can start free or book a demo on the Contact page (/contact). Existing customers log in at https://app.vorkhive.com.`;
 
 const SYSTEM_PROMPT_TAIL = `YOUR JOB
 Answer visitor questions about Vorkhive's HRMS (leave, claims, attendance, payroll, CPF/MOM/IRAS compliance), highlight relevant benefits for Singapore teams, and guide interested visitors to start free, book a demo, or contact the team. Be warm, concise (2-3 short sentences), and helpful. If you don't know something or the visitor wants a human, share the contact details above. Only discuss Vorkhive and Singapore HR/payroll topics; politely redirect anything off-topic.
 
 Reply in plain conversational text. Do NOT use markdown formatting — no **bold**, no #headings, no bullet asterisks, no backticks. Write prices and details inline in normal sentences.`;
+
+// Live pricing so the bot always quotes current figures. Pulls from the same
+// source of truth as the website, cached for 5 minutes, with content as fallback.
+const PRICING_API = process.env.PRICING_API || 'https://app.vorkhive.com/api/pricing';
+let pricingCache = { text: '', at: 0 };
+function planLines(plans) {
+    return plans.map((p) => {
+        const unit = p.unit || p.period || '/ user / mo';
+        const tag = p.popular || p.featured ? ' (most popular)' : (p.contact ? ' (contact sales)' : '');
+        const desc = p.tagline || p.desc || '';
+        return `- ${p.name}: ${p.price} ${String(unit).trim()}${tag}${desc ? ` — ${desc}` : ''}`;
+    }).join('\n');
+}
+function fallbackPricingText() {
+    try {
+        const merged = ssr ? ssr.mergeContent(ssr.defaultContent, readContent()) : null;
+        const plans = (merged && merged.pricing && merged.pricing.plans) || [];
+        return plans.length ? planLines(plans) : '';
+    } catch { return ''; }
+}
+async function refreshPricing() {
+    try {
+        const r = await fetch(PRICING_API, { signal: AbortSignal.timeout(4000) });
+        const j = await r.json();
+        const plans = Array.isArray(j?.plans) ? j.plans.filter((p) => p.active !== false) : [];
+        if (plans.length) pricingCache = { text: planLines(plans), at: Date.now() };
+    } catch { /* keep last good cache */ }
+    return pricingCache.text;
+}
+async function getPricingText() {
+    if (pricingCache.text && Date.now() - pricingCache.at < 5 * 60 * 1000) return pricingCache.text;
+    return (await refreshPricing()) || fallbackPricingText();
+}
+refreshPricing(); // warm the cache at startup
 
 // ---- Live human handoff via Slack -----------------------------------------
 const SLACK_BOT_TOKEN = process.env.SLACK_BOT_TOKEN || '';
@@ -498,11 +532,11 @@ function recordUsage(inTok, outTok) {
     } catch (e) { console.error('usage write:', e.message); }
 }
 
-async function streamClaude(history, write, lang) {
+async function streamClaude(history, write, lang, pricingText) {
     const stream = anthropic.messages.stream({
         model: CLAUDE_MODEL,
         max_tokens: 400,
-        system: buildSystemPrompt(lang),
+        system: buildSystemPrompt(lang, pricingText),
         messages: history.map((m) => ({
             role: m.role === 'assistant' ? 'assistant' : 'user',
             content: m.content,
@@ -513,7 +547,7 @@ async function streamClaude(history, write, lang) {
     if (final?.usage) recordUsage(final.usage.input_tokens, final.usage.output_tokens);
 }
 
-async function streamOllama(history, write, lang) {
+async function streamOllama(history, write, lang, pricingText) {
     const upstream = await fetch(`${OLLAMA_URL}/api/chat`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -521,7 +555,7 @@ async function streamOllama(history, write, lang) {
             model: OLLAMA_MODEL,
             stream: true,
             keep_alive: OLLAMA_KEEPALIVE,
-            messages: [{ role: 'system', content: buildSystemPrompt(lang) }, ...history],
+            messages: [{ role: 'system', content: buildSystemPrompt(lang, pricingText) }, ...history],
             options: { temperature: 0.4, num_predict: 220, num_ctx: 2048 },
         }),
     });
@@ -575,6 +609,7 @@ app.post('/api/chat', chatLimiter, async (req, res) => {
     }
 
     const lang = String(req.body?.lang || 'en').slice(0, 5);
+    const pricingText = await getPricingText();
 
     res.setHeader('Content-Type', 'text/plain; charset=utf-8');
     res.setHeader('Cache-Control', 'no-cache');
@@ -585,7 +620,7 @@ app.post('/api/chat', chatLimiter, async (req, res) => {
     // 1) Try Claude first.
     if (anthropic) {
         try {
-            await streamClaude(history, write, lang);
+            await streamClaude(history, write, lang, pricingText);
             return res.end();
         } catch (error) {
             console.error('Claude API error, falling back to Ollama:', error?.message || error);
@@ -595,7 +630,7 @@ app.post('/api/chat', chatLimiter, async (req, res) => {
 
     // 2) Fall back to local Ollama.
     try {
-        await streamOllama(history, write, lang);
+        await streamOllama(history, write, lang, pricingText);
         res.end();
     } catch (error) {
         console.error('Error in /api/chat:', error);
