@@ -768,6 +768,46 @@ function applyHomeSeo(html, content, lang) {
         .replace('</head>', `${homeHreflang()}</head>`);
 }
 
+// Inner pages: translated title/meta/FAQ from content (lang-specific) + hreflang
+// for pages that exist in every language; English ROUTE_SEO for the rest.
+const PAGE_KEY_BY_ROUTE = { '/payroll-singapore': 'payroll', '/cpf-payroll': 'cpf' };
+function pageHreflang(rest) {
+    const tags = ['en', 'zh', 'ms', 'ta', 'th']
+        .map((l) => `<link rel="alternate" hreflang="${I18N[l].hreflang}" href="${l === 'en' ? 'https://vorkhive.com' : `https://vorkhive.com/${l}`}${rest}" />`)
+        .join('');
+    return `${tags}<link rel="alternate" hreflang="x-default" href="https://vorkhive.com${rest}" />`;
+}
+function applyInnerSeo(html, rest, content, lang) {
+    const key = PAGE_KEY_BY_ROUTE[rest];
+    const cpage = key && content && content.pages && content.pages[key];
+    let title, description, faqPairs, url, hreflang = '';
+    if (cpage) {
+        title = cpage.seo?.title || '';
+        description = cpage.seo?.description || '';
+        faqPairs = (cpage.faq || []).map((f) => [f.q, f.a]);
+        url = (lang === 'en' ? 'https://vorkhive.com' : `https://vorkhive.com/${lang}`) + rest;
+        hreflang = pageHreflang(rest);
+    } else {
+        const s = ROUTE_SEO[rest];
+        if (!s) return html;
+        title = s.title; description = s.description; url = s.canonical; faqPairs = s.faq || null;
+    }
+    const faqJson = (faqPairs && faqPairs.length)
+        ? JSON.stringify({ '@context': 'https://schema.org', '@type': 'FAQPage', mainEntity: faqPairs.map(([q, a]) => ({ '@type': 'Question', name: q, acceptedAnswer: { '@type': 'Answer', text: a } })) }).replace(/</g, '\\u003c')
+        : '';
+    return html
+        .replace(/<title>[^<]*<\/title>/, `<title>${escHtml(title)}</title>`)
+        .replace(/(<meta name="description" content=")[^"]*(")/, `$1${escAttr(description)}$2`)
+        .replace(/(<link rel="canonical" href=")[^"]*(")/, `$1${url}$2`)
+        .replace(/(<meta property="og:title" content=")[^"]*(")/, `$1${escAttr(title)}$2`)
+        .replace(/(<meta property="og:description" content=")[^"]*(")/, `$1${escAttr(description)}$2`)
+        .replace(/(<meta property="og:url" content=")[^"]*(")/, `$1${url}$2`)
+        .replace(/(<meta name="twitter:title" content=")[^"]*(")/, `$1${escAttr(title)}$2`)
+        .replace(/(<meta name="twitter:description" content=")[^"]*(")/, `$1${escAttr(description)}$2`)
+        .replace(/\s*<link rel="alternate" hreflang="[^"]*" href="[^"]*"\s*\/>/g, '')
+        .replace('</head>', `${hreflang}${faqJson ? `<script type="application/ld+json">${faqJson}</script>` : ''}</head>`);
+}
+
 app.get(/(.*)/, (req, res) => {
     try {
         const { lang, rest } = parseLang(req.path);
@@ -780,7 +820,7 @@ app.get(/(.*)/, (req, res) => {
             .replace('<!--app-html-->', appHtml)
             .replace('<!--content-state-->', stateScript)
             .replace(/<html lang="[^"]*"/, `<html lang="${(I18N[lang] || I18N.en).html}"`);
-        html = (rest === '/' || rest === '') ? applyHomeSeo(html, content, lang) : applyRouteSeo(html, rest);
+        html = (rest === '/' || rest === '') ? applyHomeSeo(html, content, lang) : applyInnerSeo(html, rest, content, lang);
         res.set('Content-Type', 'text/html; charset=utf-8').send(html);
     } catch (e) {
         console.error('SSR render error:', e);
