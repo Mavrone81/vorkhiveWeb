@@ -132,6 +132,53 @@ export const defaultContent = {
     copyright: '© 2026 Vorkhive, Inc. · Singapore. All rights reserved.',
     legal: 'Privacy · Terms · SOC 2 Type II',
   },
+  pages: {
+    payroll: {
+      seo: { title: 'Singapore Payroll Software with CPF | Vorkhive HRMS', description: 'Run Singapore payroll with CPF calculated automatically, digital payslips and IRAS-ready (IR8A) filing. MOM-ready payroll software from Vorkhive.' },
+      eyebrow: 'Singapore Payroll',
+      h1: 'Singapore payroll software with CPF built in',
+      lede: 'Run accurate, MOM-ready payroll for your Singapore team — with CPF contributions calculated automatically, digital payslips, and IRAS-ready year-end filing. No spreadsheets, no manual CPF tables.',
+      ctaPrimary: 'Start free — no card needed', ctaSecondary: 'Book a 15-min demo',
+      sections: [
+        { h2: 'Payroll built for Singapore, not retrofitted', body: ['Most payroll tools treat Singapore as an afterthought. Vorkhive is a Singapore-compliant HRMS first: every pay run accounts for CPF, statutory leave and IRAS reporting the way local regulations expect. Add an employee once and their salary, leave, claims and attendance all feed the same payroll record.'] },
+        { h2: 'CPF calculated automatically on every run', body: ['Vorkhive computes both employer and employee CPF contributions for you on each payroll run, so you never maintain contribution tables or worry about wage ceilings and age bands by hand.'], bullets: ['Employer and employee CPF computed on every pay run', 'Ordinary and additional wage handled correctly', 'Itemised digital payslips employees can self-serve'] },
+        { h2: 'IRAS-ready filing and digital payslips', body: ['At year end, Vorkhive produces IRAS-ready reporting (IR8A) so submission is a few clicks instead of a manual reconciliation. Throughout the year, every employee gets itemised digital payslips through self-service — no PDFs emailed around.'] },
+        { h2: 'One platform — leave, claims and attendance flow into pay', body: ['Because Vorkhive is a full HRMS, approved leave, submitted claims and recorded attendance connect directly to payroll. That means fewer manual adjustments and fewer payday surprises.'] },
+        { h2: 'Set up Singapore payroll in three steps', bullets: ['Import your staff and set salaries and entitlements', 'Connect leave, claims and attendance (already built in)', 'Run payroll — CPF and payslips handled automatically'] },
+      ],
+      faqHeading: 'Singapore payroll FAQ',
+      faq: [
+        { q: 'Does Vorkhive calculate CPF automatically?', a: 'Yes. Employer and employee CPF contributions are calculated automatically on every payroll run, and the figures appear on each digital payslip.' },
+        { q: 'Is Vorkhive payroll IRAS compliant?', a: 'Vorkhive produces IRAS-ready year-end reporting (IR8A), so filing is straightforward.' },
+        { q: 'How long does setup take?', a: 'Most Singapore teams are live within a day — import staff, set entitlements, and run your first CPF-compliant payroll the same week.' },
+      ],
+      relatedHeading: 'Explore more',
+      related: [{ label: 'CPF payroll software', href: '/cpf-payroll' }, { label: 'Pricing', href: '/#pricing' }, { label: 'The platform', href: '/#platform' }],
+      finalPrimary: 'Start free', finalSecondary: 'Talk to our team',
+    },
+    cpf: {
+      seo: { title: 'CPF Payroll Software — Automatic CPF Calculation | Vorkhive', description: 'CPF payroll software that calculates employer and employee CPF automatically on every run, with compliant payslips and IRAS-ready (IR8A) reporting.' },
+      eyebrow: 'CPF Payroll',
+      h1: 'CPF payroll software that calculates contributions for you',
+      lede: 'Stop reconciling CPF by hand. Vorkhive works out employer and employee CPF contributions automatically on every payroll run, produces compliant digital payslips, and keeps you ready for IRAS — so payday in Singapore is a few clicks.',
+      ctaPrimary: 'Start free — no card needed', ctaSecondary: 'Book a 15-min demo',
+      sections: [
+        { h2: 'Automatic CPF calculation, every pay run', body: ['CPF is where most Singapore payroll goes wrong — manual tables, missed wage ceilings, the wrong age band. Vorkhive removes the guesswork: it calculates both the employer and employee CPF contribution for each employee automatically, and shows the figures clearly on every payslip.'], bullets: ['Employer and employee CPF computed automatically', 'Ordinary and additional wages handled', 'Contribution figures itemised on each digital payslip'] },
+        { h2: 'Kept aligned with CPF rules', body: ['CPF rates, wage ceilings and age bands change over time. Rather than asking your HR team to track every circular, Vorkhive keeps CPF handling current so your pay runs stay compliant without manual updates. Your team focuses on people, not spreadsheets.'] },
+        { h2: 'From CPF to IRAS — year-end handled', body: ['CPF and income reporting are connected. Vorkhive carries the same data through to IRAS-ready year-end reporting (IR8A), so what you run during the year is what you file at the end of it — no separate reconciliation.'] },
+        { h2: 'CPF is one part of a complete HRMS', body: ["Vorkhive isn't a standalone CPF calculator — it's a full Singapore HRMS where leave, claims, attendance and payroll share one record. That's why CPF “just works”: the numbers come from the same source of truth your team already uses."] },
+      ],
+      faqHeading: 'CPF payroll FAQ',
+      faq: [
+        { q: 'Does Vorkhive calculate both employer and employee CPF?', a: 'Yes — both the employer and employee CPF contributions are calculated automatically on every payroll run.' },
+        { q: 'Do I need to update CPF rates myself?', a: 'No. Vorkhive keeps CPF handling aligned with current rules so your pay runs stay compliant without manual table updates.' },
+        { q: 'Is the CPF data used for IRAS filing?', a: 'Yes. The same payroll data flows into IRAS-ready year-end reporting (IR8A).' },
+      ],
+      relatedHeading: 'Explore more',
+      related: [{ label: 'Singapore payroll software', href: '/payroll-singapore' }, { label: 'Pricing', href: '/#pricing' }, { label: 'The platform', href: '/#platform' }],
+      finalPrimary: 'Start free', finalSecondary: 'Talk to our team',
+    },
+  },
 };
 
 // Deep-merge overrides (from content.json) over the defaults. Arrays are

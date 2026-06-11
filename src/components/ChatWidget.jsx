@@ -123,16 +123,13 @@ export default function ChatWidget() {
     const history = [...messages, { role: 'user', content }];
     setMessages([...history, { role: 'assistant', content: '' }]);
     setBusy(true);
-    try {
-      const res = await fetch('/api/chat', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          sessionId: sid,
-          lang: (typeof window !== 'undefined' && window.__LANG__) || 'en',
-          messages: history.filter((m, i) => !(i === 0 && m.role === 'assistant')),
-        }),
-      });
+    const payload = JSON.stringify({
+      sessionId: sid,
+      lang: (typeof window !== 'undefined' && window.__LANG__) || 'en',
+      messages: history.filter((m, i) => !(i === 0 && m.role === 'assistant')),
+    });
+    const attempt = async () => {
+      const res = await fetch('/api/chat', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: payload });
       if (!res.ok || !res.body) throw new Error('bad response');
       const reader = res.body.getReader();
       const decoder = new TextDecoder();
@@ -145,6 +142,16 @@ export default function ChatWidget() {
         setMessages((prev) => { const next = prev.slice(); next[next.length - 1] = { role: 'assistant', content: acc }; return next; });
       }
       if (!acc.trim()) throw new Error('empty');
+    };
+    try {
+      try {
+        await attempt();
+      } catch {
+        // Transient blip: reset the bubble and retry once before giving up.
+        await new Promise((r) => setTimeout(r, 700));
+        setMessages((prev) => { const next = prev.slice(); next[next.length - 1] = { role: 'assistant', content: '' }; return next; });
+        await attempt();
+      }
     } catch {
       setMessages((prev) => {
         const next = prev.slice();
