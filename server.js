@@ -408,11 +408,33 @@ const SLACK_SIGNING_SECRET = process.env.SLACK_SIGNING_SECRET || '';
 const SLACK_CHANNEL_ID = process.env.SLACK_CHANNEL_ID || '';
 const slackEnabled = !!(SLACK_BOT_TOKEN && SLACK_CHANNEL_ID);
 
-// In-memory conversation state (single-process app). sessionId -> conversation;
-// threadIndex maps a Slack thread back to its session.
+// Conversation state. sessionId -> conversation; threadIndex maps a Slack thread
+// back to its session. Persisted to disk so live handoffs survive a redeploy.
+const CONVOS_FILE = path.join(__dirname, 'conversations.json');
 const convos = new Map();
 const threadIndex = new Map();
 const CONVO_TTL_MS = 2 * 60 * 60 * 1000;
+try {
+    const raw = JSON.parse(fs.readFileSync(CONVOS_FILE, 'utf8'));
+    const now = Date.now();
+    for (const c of (Array.isArray(raw) ? raw : [])) {
+        if (c && c.id && now - (c.lastSeen || 0) < CONVO_TTL_MS) {
+            convos.set(c.id, c);
+            if (c.threadTs) threadIndex.set(c.threadTs, c.id);
+        }
+    }
+    if (convos.size) console.log(`Restored ${convos.size} live conversation(s)`);
+} catch { /* no saved state yet */ }
+let convosSaveTimer = null;
+function saveConvos() {
+    if (convosSaveTimer) return;
+    convosSaveTimer = setTimeout(() => {
+        convosSaveTimer = null;
+        try { fs.writeFileSync(CONVOS_FILE, JSON.stringify([...convos.values()])); }
+        catch (e) { console.error('convos save:', e.message); }
+    }, 400);
+    convosSaveTimer.unref?.();
+}
 function getConvo(id) {
     let c = convos.get(id);
     if (!c) { c = { id, mode: 'bot', threadTs: null, agentMsgs: [], lastSeen: Date.now() }; convos.set(id, c); }
@@ -421,9 +443,11 @@ function getConvo(id) {
 }
 setInterval(() => {
     const now = Date.now();
+    let changed = false;
     for (const [id, c] of convos) {
-        if (now - c.lastSeen > CONVO_TTL_MS) { convos.delete(id); if (c.threadTs) threadIndex.delete(c.threadTs); }
+        if (now - c.lastSeen > CONVO_TTL_MS) { convos.delete(id); if (c.threadTs) threadIndex.delete(c.threadTs); changed = true; }
     }
+    if (changed) saveConvos();
 }, 10 * 60 * 1000).unref?.();
 
 async function slackPost(text, threadTs) {
@@ -613,6 +637,7 @@ app.post('/api/handoff', async (req, res) => {
             threadIndex.set(c.threadTs, sessionId);
         }
         c.mode = 'human';
+        saveConvos();
         res.json({ ok: true });
     } catch (e) {
         console.error('handoff error:', e.message);
@@ -648,6 +673,7 @@ app.post('/api/slack/events', (req, res) => {
         if (!text) return;
         c.agentMsgs.push({ text });
         c.lastSeen = Date.now();
+        saveConvos();
     } catch (err) {
         console.error('slack event error:', err.message);
     }

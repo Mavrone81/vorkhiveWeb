@@ -27,4 +27,5 @@ services:
       - ./data/content.json:/app/content.json
       - ./data/usage.json:/app/usage.json
       - ./data/bookings.json:/app/bookings.json
+      - ./data/conversations.json:/app/conversations.json
       - ./data/uploads:/app/uploads

@@ -67,6 +67,13 @@ export default function ChatWidget() {
         if (!r.ok) return;
         const j = await r.json();
         if (!alive) return;
+        if (j.mode === 'bot') {
+          // Server no longer holds this handoff (expired/unknown) — don't strand
+          // the visitor; hand back to the assistant.
+          setMode('bot');
+          setMessages((prev) => [...prev, { role: 'assistant', content: "I'm back! The assistant can keep helping — what would you like to know?" }]);
+          return;
+        }
         if (typeof j.cursor === 'number') cursor = j.cursor;
         if (Array.isArray(j.messages) && j.messages.length) {
           setMessages((prev) => [...prev, ...j.messages.map((m) => ({ role: 'agent', content: m.text }))]);
