@@ -645,6 +645,15 @@ app.post('/api/handoff', async (req, res) => {
     }
 });
 
+// Visitor handed back to the bot (e.g. no human replied in time). Stop relaying
+// this session to Slack so the assistant answers again.
+app.post('/api/resume', (req, res) => {
+    const sessionId = String(req.body?.sessionId || '').slice(0, 64);
+    const c = sessionId && convos.get(sessionId);
+    if (c) { c.mode = 'bot'; c.lastSeen = Date.now(); saveConvos(); }
+    res.json({ ok: true });
+});
+
 // Widget polls for new agent (human) messages since `cursor`.
 app.get('/api/poll', (req, res) => {
     const sessionId = String(req.query.sessionId || '').slice(0, 64);

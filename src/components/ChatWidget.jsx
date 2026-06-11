@@ -61,6 +61,7 @@ export default function ChatWidget() {
     if (mode !== 'human' || !sid) return undefined;
     let cursor = 0;
     let alive = true;
+    let humanReplied = false;
     const tick = async () => {
       try {
         const r = await fetch(`/api/poll?sessionId=${encodeURIComponent(sid)}&cursor=${cursor}`);
@@ -76,13 +77,23 @@ export default function ChatWidget() {
         }
         if (typeof j.cursor === 'number') cursor = j.cursor;
         if (Array.isArray(j.messages) && j.messages.length) {
+          humanReplied = true;
           setMessages((prev) => [...prev, ...j.messages.map((m) => ({ role: 'agent', content: m.text }))]);
         }
       } catch { /* ignore transient poll errors */ }
     };
     const id = setInterval(tick, 3000);
     tick();
-    return () => { alive = false; clearInterval(id); };
+    // Auto-fallback: if no human replies within ~60s, hand back to the assistant
+    // so the visitor is never left waiting.
+    const fallback = setTimeout(async () => {
+      if (!alive || humanReplied) return;
+      try { await fetch('/api/resume', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ sessionId: sid }) }); } catch { /* best effort */ }
+      if (!alive || humanReplied) return;
+      setMode('bot');
+      setMessages((prev) => [...prev, { role: 'assistant', content: "Our team isn't online right this second — but I can keep helping! You can also reach us on WhatsApp +65 8700 7621 or email enquires@vorkhive.com." }]);
+    }, 60000);
+    return () => { alive = false; clearInterval(id); clearTimeout(fallback); };
   }, [mode, sid]);
 
   async function handleHandoff() {
