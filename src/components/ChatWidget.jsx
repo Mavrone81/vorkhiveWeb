@@ -12,6 +12,15 @@ const HUMAN_REPLY = 'Talk to a human';
 // Typed phrases that should trigger the live-human handoff (not a bot reply).
 const HUMAN_INTENT = /\b(speak|talk|chat|connect|transfer|put me|get me|reach)\b[^.?!]{0,24}\b(human|person|someone|agent|representative|rep|advisor|consultant|live|real|staff|team\s*member|operator|sales)\b|live\s+(agent|chat|person|support)|real\s+(person|human|agent)|customer\s+(service|support)|\bhuman\s+(agent|support|help|please|now)\b/i;
 
+// End-of-chat lifecycle.
+const IDLE_BOT_MS = 3 * 60 * 1000;
+const IDLE_HUMAN_MS = 5 * 60 * 1000;
+const END_GRACE_MS = 60 * 1000;
+const END_PROMPT = "Thanks for chatting with Vorkhive! If there's nothing else I can help with, I'll close this chat shortly — just reply if you'd like to keep going. 👋";
+const END_GOODBYE = 'Thanks for chatting with Vorkhive — have a great day! 👋';
+// A reply that is purely a goodbye/agreement ends the chat; anything else keeps it open.
+const END_AGREE = /^[\s]*((yes|yeah|yep|ok|okay|sure|no thanks?|no thank you|nope|nah|that'?s all|all good|nothing( else)?|i'?m good|im good|done|bye|goodbye|see ya|cheers|thanks|thank you|thx|ty|end( chat)?|you can end|good ?bye)[\s.!,]*)+$/i;
+
 function makeSid() {
   return 'sid_' + Math.random().toString(36).slice(2) + Date.now().toString(36);
 }
@@ -22,8 +31,10 @@ export default function ChatWidget() {
   const [input, setInput] = useState('');
   const [busy, setBusy] = useState(false);
   const [mode, setMode] = useState('bot'); // 'bot' | 'human'
+  const [awaitingEnd, setAwaitingEnd] = useState(false);
   const scrollRef = useRef(null);
   const inputRef = useRef(null);
+  const stateRef = useRef({ mode, sid: '' });
 
   // Stable per-visitor session id (client only).
   const [sid] = useState(() => {
@@ -56,6 +67,48 @@ export default function ChatWidget() {
     window.addEventListener('pageshow', onShow);
     return () => window.removeEventListener('pageshow', onShow);
   }, []);
+
+  // Keep latest mode/sid for timer callbacks (avoid stale closures).
+  useEffect(() => { stateRef.current = { mode, sid }; }, [mode, sid]);
+
+  function endChat() {
+    const { mode: m, sid: s } = stateRef.current;
+    setAwaitingEnd(false);
+    if (m === 'human' && s) {
+      fetch('/api/resume', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ sessionId: s }) }).catch(() => {});
+    }
+    setMode('bot');
+    setMessages([{ role: 'assistant', content: GREETING }]);
+  }
+
+  // Idle: prompt to end after 3 min (bot) / 5 min (human) of no new messages.
+  useEffect(() => {
+    if (awaitingEnd || messages.length <= 1) return undefined;
+    const ms = mode === 'human' ? IDLE_HUMAN_MS : IDLE_BOT_MS;
+    const t = setTimeout(() => {
+      setAwaitingEnd(true);
+      setMessages((prev) => [...prev, { role: 'assistant', content: END_PROMPT }]);
+    }, ms);
+    return () => clearTimeout(t);
+  }, [messages, mode, awaitingEnd]);
+
+  // After the end prompt, close the chat if there's no reply within the grace window.
+  useEffect(() => {
+    if (!awaitingEnd) return undefined;
+    const t = setTimeout(() => endChat(), END_GRACE_MS);
+    return () => clearTimeout(t);
+  }, [awaitingEnd]);
+
+  // Closing/reloading the page ends any live handoff server-side.
+  useEffect(() => {
+    const onHide = () => {
+      if (mode === 'human' && sid && navigator.sendBeacon) {
+        navigator.sendBeacon('/api/resume', new Blob([JSON.stringify({ sessionId: sid })], { type: 'application/json' }));
+      }
+    };
+    window.addEventListener('pagehide', onHide);
+    return () => window.removeEventListener('pagehide', onHide);
+  }, [mode, sid]);
 
   // Deep-link: app.vorkhive.com's billing "Contact sales" links here with
   // ?chat=sales (or #chat) to open the assistant straight into a sales chat.
@@ -147,6 +200,18 @@ export default function ChatWidget() {
     const content = (text ?? input).trim();
     if (!content || busy) return;
     setInput('');
+
+    // Replying to the "shall I close this chat?" prompt.
+    if (awaitingEnd) {
+      setAwaitingEnd(false);
+      if (END_AGREE.test(content)) {
+        setMessages((prev) => [...prev, { role: 'user', content }, { role: 'assistant', content: END_GOODBYE }]);
+        if (mode === 'human' && sid) fetch('/api/resume', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ sessionId: sid }) }).catch(() => {});
+        setTimeout(() => endChat(), 4000);
+        return;
+      }
+      // Otherwise the visitor wants to keep going — fall through and handle normally.
+    }
 
     // Human mode: relay to the team (no bot reply); their answer arrives via polling.
     if (mode === 'human') {
