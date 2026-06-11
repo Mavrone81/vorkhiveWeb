@@ -1,13 +1,17 @@
 import { Link } from 'react-router-dom';
 import { MarketingShell } from './Shell.jsx';
+import { useContent } from '../content/ContentContext.jsx';
 
 export default function Terms() {
+  const c = useContent();
+  const notice = c._lang && c._lang !== 'en' ? c.pages?.legalNotice : '';
   return (
     <MarketingShell>
       <section className="article legal">
         <p className="eyebrow">Legal</p>
         <h1>Terms of Service</h1>
         <p className="legal-updated">Last updated: 11 June 2026</p>
+        {notice && <p className="legal-notice">{notice}</p>}
         <p className="lede">These Terms of Service ("Terms") govern your access to and use of the Vorkhive website and the Vorkhive human-resources platform (together, the "Service"), operated by Vorkhive ("Vorkhive", "we", "us"). By accessing or using the Service, you agree to these Terms.</p>
 
         <h2>1. Agreement to these Terms</h2>

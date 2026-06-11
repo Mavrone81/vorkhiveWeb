@@ -188,5 +188,6 @@ export default {
       doneBody: 'Terima kasih atas minat anda terhadap Vorkhive. Pasukan kami akan menyemak maklumat anda dan menghubungi anda tidak lama lagi untuk menyediakan percubaan percuma anda.',
       doneBtn: 'Kembali ke Laman Utama',
     },
+    legalNotice: 'Dokumen ini disediakan dalam bahasa Inggeris, iaitu versi yang mengawal. Terjemahan ini adalah untuk kemudahan sahaja; jika terdapat sebarang percanggahan, versi bahasa Inggeris akan diguna pakai.',
   },
 };

@@ -1,13 +1,17 @@
 import { Link } from 'react-router-dom';
 import { MarketingShell } from './Shell.jsx';
+import { useContent } from '../content/ContentContext.jsx';
 
 export default function Privacy() {
+  const c = useContent();
+  const notice = c._lang && c._lang !== 'en' ? c.pages?.legalNotice : '';
   return (
     <MarketingShell>
       <section className="article legal">
         <p className="eyebrow">Legal</p>
         <h1>Privacy Policy</h1>
         <p className="legal-updated">Last updated: 11 June 2026</p>
+        {notice && <p className="legal-notice">{notice}</p>}
         <p className="lede">This Privacy Policy explains how Vorkhive ("Vorkhive", "we", "us") collects, uses, discloses and protects personal data when you use our website and platform (the "Service"). We handle personal data in line with Singapore's Personal Data Protection Act (PDPA) and applicable laws.</p>
 
         <h2>1. Scope</h2>
