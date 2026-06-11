@@ -9,6 +9,8 @@ const GREETING =
   "Hi! I'm Vorka, the Vorkhive HR assistant. Ask me about leave, claims, payroll, CPF compliance or pricing. 👋";
 const QUICK_REPLIES = ['What is Vorkhive?', 'Does it handle CPF & payroll?', 'How much does it cost?', 'Talk to a human'];
 const HUMAN_REPLY = 'Talk to a human';
+// Typed phrases that should trigger the live-human handoff (not a bot reply).
+const HUMAN_INTENT = /\b(speak|talk|chat|connect|transfer|put me|get me|reach)\b[^.?!]{0,24}\b(human|person|someone|agent|representative|rep|advisor|consultant|live|real|staff|team\s*member|operator|sales)\b|live\s+(agent|chat|person|support)|real\s+(person|human|agent)|customer\s+(service|support)|\bhuman\s+(agent|support|help|please|now)\b/i;
 
 function makeSid() {
   return 'sid_' + Math.random().toString(36).slice(2) + Date.now().toString(36);
@@ -96,10 +98,9 @@ export default function ChatWidget() {
     return () => { alive = false; clearInterval(id); clearTimeout(fallback); };
   }, [mode, sid]);
 
-  async function handleHandoff() {
-    if (busy || mode === 'human') return;
-    const convo = messages.filter((m, i) => !(i === 0 && m.role === 'assistant'));
-    setMessages((prev) => [...prev, { role: 'user', content: HUMAN_REPLY }, { role: 'assistant', content: '' }]);
+  // Core handoff: opens a Slack thread and switches to human mode.
+  async function doHandoff(convo) {
+    setMessages((prev) => [...prev, { role: 'assistant', content: '' }]);
     setBusy(true);
     try {
       const res = await fetch('/api/handoff', {
@@ -120,6 +121,14 @@ export default function ChatWidget() {
     }
   }
 
+  // Quick-reply button.
+  function handleHandoff() {
+    if (busy || mode === 'human') return;
+    const convo = messages.filter((m, i) => !(i === 0 && m.role === 'assistant'));
+    setMessages((prev) => [...prev, { role: 'user', content: HUMAN_REPLY }]);
+    doHandoff(convo);
+  }
+
   async function send(text) {
     const content = (text ?? input).trim();
     if (!content || busy) return;
@@ -135,6 +144,14 @@ export default function ChatWidget() {
           body: JSON.stringify({ sessionId: sid, messages: [{ role: 'user', content }] }),
         });
       } catch { /* delivered best-effort */ }
+      return;
+    }
+
+    // Visitor is asking for a person -> trigger the live handoff instead of the bot.
+    if (HUMAN_INTENT.test(content)) {
+      const convo = [...messages.filter((m, i) => !(i === 0 && m.role === 'assistant')), { role: 'user', content }];
+      setMessages((prev) => [...prev, { role: 'user', content }]);
+      doHandoff(convo);
       return;
     }
 
