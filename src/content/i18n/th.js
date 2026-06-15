@@ -5,7 +5,7 @@ export default {
     description: 'HRMS ครบวงจรสำหรับสิงคโปร์ จัดการการลา การเบิกค่าใช้จ่าย การเข้างาน เงินเดือน และการปฏิบัติตาม CPF ในแพลตฟอร์มเดียว พร้อมตามมาตรฐาน MOM เริ่มใช้ฟรี — ไม่ต้องใช้บัตร',
   },
   ui: {
-    nav: { platform: 'แพลตฟอร์ม', features: 'ฟีเจอร์', pricing: 'ราคา', faq: 'คำถามที่พบบ่อย', customers: 'ลูกค้า' },
+    nav: { platform: 'แพลตฟอร์ม', features: 'ฟีเจอร์', pricing: 'ราคา', faq: 'คำถามที่พบบ่อย', customers: 'ลูกค้า', contact: 'ติดต่อ' },
     signIn: 'เข้าสู่ระบบ',
     startFree: 'เริ่มใช้ฟรี',
     language: 'ภาษา',
@@ -108,7 +108,7 @@ export default {
   footer: {
     brandText: 'HRMS ที่เป็นไปตามกฎสิงคโปร์สำหรับการลา การเบิก การเข้างาน และเงินเดือน ดำเนินงาน HR ทั้งหมดจากการเข้าสู่ระบบเดียว',
     columns: [
-      { title: 'แพลตฟอร์ม', links: [{ label: 'เงินเดือนสิงคโปร์', href: '/payroll-singapore' }, { label: 'เงินเดือน CPF', href: '/cpf-payroll' }, { label: 'การจัดการการลา', href: '/#platform' }, { label: 'การเข้างาน', href: '/#platform' }, { label: 'ราคา', href: '/#pricing' }] },
+      { title: 'แพลตฟอร์ม', links: [{ label: 'เงินเดือนสิงคโปร์', href: '/payroll-singapore' }, { label: 'เงินเดือน CPF', href: '/cpf-payroll' }, { label: 'การจัดการการลา', href: '/platform' }, { label: 'การเข้างาน', href: '/platform' }, { label: 'ราคา', href: '/pricing' }] },
       { title: 'บริษัท', links: [{ label: 'เกี่ยวกับเรา', href: '#' }, { label: 'ร่วมงานกับเรา', href: '#' }, { label: 'บล็อก', href: '#' }, { label: 'ติดต่อ', href: '/contact' }] },
       { title: 'แหล่งข้อมูล', links: [{ label: 'ศูนย์ช่วยเหลือ', href: '#' }, { label: 'ความปลอดภัย', href: '#' }, { label: 'สถานะ', href: '#' }, { label: 'คู่มือ CPF', href: '/cpf-payroll' }] },
     ],
@@ -136,7 +136,7 @@ export default {
         { q: 'ตั้งค่าใช้เวลานานแค่ไหน?', a: 'ทีมในสิงคโปร์ส่วนใหญ่พร้อมใช้ภายในวันเดียว — นำเข้าพนักงาน ตั้งสิทธิ และทำเงินเดือนที่เป็นไปตาม CPF ครั้งแรกได้ในสัปดาห์เดียวกัน' },
       ],
       relatedHeading: 'สำรวจเพิ่มเติม',
-      related: [{ label: 'ซอฟต์แวร์เงินเดือน CPF', href: '/cpf-payroll' }, { label: 'ราคา', href: '/#pricing' }, { label: 'แพลตฟอร์ม', href: '/#platform' }],
+      related: [{ label: 'ซอฟต์แวร์เงินเดือน CPF', href: '/cpf-payroll' }, { label: 'ราคา', href: '/pricing' }, { label: 'แพลตฟอร์ม', href: '/platform' }],
       finalPrimary: 'เริ่มใช้ฟรี', finalSecondary: 'ติดต่อทีมของเรา',
     },
     cpf: {
@@ -158,7 +158,7 @@ export default {
         { q: 'ข้อมูล CPF ใช้สำหรับการยื่น IRAS หรือไม่?', a: 'ใช่ ข้อมูลเงินเดือนเดียวกันไหลเข้าสู่รายงานสิ้นปีพร้อม IRAS (IR8A)' },
       ],
       relatedHeading: 'สำรวจเพิ่มเติม',
-      related: [{ label: 'ซอฟต์แวร์เงินเดือนสิงคโปร์', href: '/payroll-singapore' }, { label: 'ราคา', href: '/#pricing' }, { label: 'แพลตฟอร์ม', href: '/#platform' }],
+      related: [{ label: 'ซอฟต์แวร์เงินเดือนสิงคโปร์', href: '/payroll-singapore' }, { label: 'ราคา', href: '/pricing' }, { label: 'แพลตฟอร์ม', href: '/platform' }],
       finalPrimary: 'เริ่มใช้ฟรี', finalSecondary: 'ติดต่อทีมของเรา',
     },
     book: {
@@ -188,6 +188,11 @@ export default {
       doneBody: 'ขอบคุณที่สนใจ Vorkhive ทีมของเราจะตรวจสอบข้อมูลของคุณและติดต่อกลับในไม่ช้าเพื่อตั้งค่าการทดลองใช้ฟรีของคุณ',
       doneBtn: 'กลับสู่หน้าแรก',
     },
+    platform: { seo: { title: 'แพลตฟอร์ม Vorkhive HRMS — การลา เงินเดือน และพนักงาน | Vorkhive', description: 'HRMS สิงคโปร์หนึ่งเดียวสำหรับการลาและบริการตนเอง เงินเดือนพร้อม CPF รวมถึงเวลาและการเติบโต ดูแพลตฟอร์ม Vorkhive ที่มาแทนสเปรดชีตและเครื่องมือที่แยกกัน' } },
+    features: { seo: { title: 'ฟีเจอร์ — ทำไมทีมสิงคโปร์จึงเลือก Vorkhive HRMS', description: 'บริการตนเองสำหรับพนักงานทุกคน CPF อัตโนมัติและการปฏิบัติตามกฎหมาย การยื่นพร้อม IRAS และบันทึกเดียวที่เชื่อมโยงการลา การเบิกจ่าย การเข้างาน และเงินเดือน' } },
+    pricing: { seo: { title: 'ราคา — แพ็กเกจ HRMS ต่อผู้ใช้ที่เรียบง่าย | Vorkhive', description: 'ราคาต่อผู้ใช้ที่โปร่งใสสำหรับ Vorkhive HRMS เริ่มฟรี อัปเกรดเป็นเงินเดือนเต็มรูปแบบพร้อม CPF ในแพ็กเกจ Growth หรือติดต่อเราเกี่ยวกับ Enterprise' } },
+    faq: { seo: { title: 'คำถามที่พบบ่อย | Vorkhive HRMS', description: 'คำตอบเกี่ยวกับ Vorkhive HRMS — การปฏิบัติตาม CPF และ IRAS ราคา เวลาในการตั้งค่า ความปลอดภัยของข้อมูล และการทำงานร่วมกันของการลา การเบิกจ่าย การเข้างาน และเงินเดือน' } },
+    customers: { seo: { title: 'ลูกค้า — ทีมสิงคโปร์ที่ใช้ Vorkhive', description: 'ดูว่า SME สิงคโปร์ใช้ Vorkhive HRMS จัดการการลา การเบิกจ่าย การเข้างาน และเงินเดือน CPF บนแพลตฟอร์มเดียวอย่างไร อ่านสิ่งที่ลูกค้าของเราพูด' } },
     legalNotice: 'เอกสารนี้จัดทำเป็นภาษาอังกฤษ ซึ่งเป็นฉบับที่มีผลบังคับใช้ คำแปลด้านล่างมีไว้เพื่อความสะดวกเท่านั้น หากมีข้อขัดแย้งใด ๆ ให้ยึดฉบับภาษาอังกฤษเป็นหลัก',
   },
 };

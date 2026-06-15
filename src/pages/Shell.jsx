@@ -74,22 +74,23 @@ export function SiteHeader() {
   const c = useContent();
   const ui = c.ui || {};
   const navL = ui.nav || {};
-  const lang = c._lang || 'en';
-  const base = lang === 'en' ? '' : `/${lang}`;
   const [open, setOpen] = useState(false);
+  // Each tab is its own route; React Router's per-language basename adds the
+  // /zh, /ms, … prefix automatically, so the paths here stay relative.
   const NAV = [
-    [`${base}/#platform`, navL.platform || 'Platform'],
-    [`${base}/#features`, navL.features || 'Features'],
-    [`${base}/#pricing`, navL.pricing || 'Pricing'],
-    [`${base}/#faq`, navL.faq || 'FAQ'],
-    [`${base}/#testimonials`, navL.customers || 'Customers'],
+    ['/platform', navL.platform || 'Platform'],
+    ['/features', navL.features || 'Features'],
+    ['/pricing', navL.pricing || 'Pricing'],
+    ['/faq', navL.faq || 'FAQ'],
+    ['/customers', navL.customers || 'Customers'],
+    ['/contact', navL.contact || 'Contact'],
   ];
   return (
     <header>
       <div className="wrap">
         <nav aria-label="Primary">
           <Logo />
-          <div className="navlinks">{NAV.map(([h, l]) => <a key={h} href={h}>{l}</a>)}</div>
+          <div className="navlinks">{NAV.map(([h, l]) => <Link key={h} to={h}>{l}</Link>)}</div>
           <div className="navcta">
             <LanguageSwitcher />
             <a href="https://app.vorkhive.com" className="btn btn-ghost">{ui.signIn || 'Sign in'}</a>
@@ -103,7 +104,7 @@ export function SiteHeader() {
         </nav>
       </div>
       <div className={`mobile-menu${open ? ' open' : ''}`}>
-        {NAV.map(([h, l]) => <a key={h} href={h} onClick={() => setOpen(false)}>{l}</a>)}
+        {NAV.map(([h, l]) => <Link key={h} to={h} onClick={() => setOpen(false)}>{l}</Link>)}
         <div style={{ padding: '10px 0' }}><LanguageSwitcher /></div>
         <a href="https://app.vorkhive.com" className="btn btn-ghost">{ui.signIn || 'Sign in'}</a>
         <CtaButton label={ui.startFree || 'Start free'} to="register" className="btn btn-primary" />

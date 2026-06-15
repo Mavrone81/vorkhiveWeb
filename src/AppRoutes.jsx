@@ -10,6 +10,7 @@ import CpfPayroll from './pages/CpfPayroll.jsx';
 import BookDemo from './pages/BookDemo.jsx';
 import Terms from './pages/Terms.jsx';
 import Privacy from './pages/Privacy.jsx';
+import { PlatformPage, FeaturesPage, PricingPage, FaqPage, CustomersPage } from './pages/SectionPages.jsx';
 import { ContentProvider } from './content/ContentContext.jsx';
 
 // Shared app tree used by both the client (hydration) and the
@@ -21,6 +22,11 @@ export default function AppRoutes({ content }) {
       <Layout>
         <Routes>
           <Route path="/" element={<App />} />
+          <Route path="/platform" element={<PlatformPage />} />
+          <Route path="/features" element={<FeaturesPage />} />
+          <Route path="/pricing" element={<PricingPage />} />
+          <Route path="/faq" element={<FaqPage />} />
+          <Route path="/customers" element={<CustomersPage />} />
           <Route path="/payroll-singapore" element={<PayrollSingapore />} />
           <Route path="/cpf-payroll" element={<CpfPayroll />} />
           <Route path="/book" element={<BookDemo />} />

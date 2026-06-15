@@ -5,7 +5,7 @@ export default {
     description: 'HRMS lengkap untuk Singapura. Urus cuti, tuntutan, kehadiran, gaji dan pematuhan CPF dalam satu platform. Sedia MOM. Mula percuma — tiada kad.',
   },
   ui: {
-    nav: { platform: 'Platform', features: 'Ciri', pricing: 'Harga', faq: 'Soalan Lazim', customers: 'Pelanggan' },
+    nav: { platform: 'Platform', features: 'Ciri', pricing: 'Harga', faq: 'Soalan Lazim', customers: 'Pelanggan', contact: 'Hubungi' },
     signIn: 'Log masuk',
     startFree: 'Mula percuma',
     language: 'Bahasa',
@@ -108,7 +108,7 @@ export default {
   footer: {
     brandText: 'HRMS yang mematuhi peraturan Singapura untuk cuti, tuntutan, kehadiran dan gaji. Jalankan semua HR dari satu log masuk.',
     columns: [
-      { title: 'Platform', links: [{ label: 'Gaji Singapura', href: '/payroll-singapore' }, { label: 'Gaji CPF', href: '/cpf-payroll' }, { label: 'Pengurusan cuti', href: '/#platform' }, { label: 'Kehadiran', href: '/#platform' }, { label: 'Harga', href: '/#pricing' }] },
+      { title: 'Platform', links: [{ label: 'Gaji Singapura', href: '/payroll-singapore' }, { label: 'Gaji CPF', href: '/cpf-payroll' }, { label: 'Pengurusan cuti', href: '/platform' }, { label: 'Kehadiran', href: '/platform' }, { label: 'Harga', href: '/pricing' }] },
       { title: 'Syarikat', links: [{ label: 'Tentang', href: '#' }, { label: 'Kerjaya', href: '#' }, { label: 'Blog', href: '#' }, { label: 'Hubungi', href: '/contact' }] },
       { title: 'Sumber', links: [{ label: 'Pusat bantuan', href: '#' }, { label: 'Keselamatan', href: '#' }, { label: 'Status', href: '#' }, { label: 'Panduan CPF', href: '/cpf-payroll' }] },
     ],
@@ -136,7 +136,7 @@ export default {
         { q: 'Berapa lama persediaan mengambil masa?', a: 'Kebanyakan pasukan Singapura beroperasi dalam sehari — import pekerja, tetapkan kelayakan, dan jalankan gaji patuh CPF pertama anda pada minggu yang sama.' },
       ],
       relatedHeading: 'Terokai lagi',
-      related: [{ label: 'Perisian gaji CPF', href: '/cpf-payroll' }, { label: 'Harga', href: '/#pricing' }, { label: 'Platform', href: '/#platform' }],
+      related: [{ label: 'Perisian gaji CPF', href: '/cpf-payroll' }, { label: 'Harga', href: '/pricing' }, { label: 'Platform', href: '/platform' }],
       finalPrimary: 'Mula percuma', finalSecondary: 'Hubungi pasukan kami',
     },
     cpf: {
@@ -158,7 +158,7 @@ export default {
         { q: 'Adakah data CPF digunakan untuk pemfailan IRAS?', a: 'Ya. Data gaji yang sama mengalir ke pelaporan akhir tahun sedia IRAS (IR8A).' },
       ],
       relatedHeading: 'Terokai lagi',
-      related: [{ label: 'Perisian gaji Singapura', href: '/payroll-singapore' }, { label: 'Harga', href: '/#pricing' }, { label: 'Platform', href: '/#platform' }],
+      related: [{ label: 'Perisian gaji Singapura', href: '/payroll-singapore' }, { label: 'Harga', href: '/pricing' }, { label: 'Platform', href: '/platform' }],
       finalPrimary: 'Mula percuma', finalSecondary: 'Hubungi pasukan kami',
     },
     book: {
@@ -188,6 +188,11 @@ export default {
       doneBody: 'Terima kasih atas minat anda terhadap Vorkhive. Pasukan kami akan menyemak maklumat anda dan menghubungi anda tidak lama lagi untuk menyediakan percubaan percuma anda.',
       doneBtn: 'Kembali ke Laman Utama',
     },
+    platform: { seo: { title: 'Platform HRMS Vorkhive — Cuti, Gaji & Pekerja | Vorkhive', description: 'Satu HRMS Singapura untuk cuti dan layan diri, gaji dengan CPF, serta masa dan pertumbuhan. Lihat platform Vorkhive yang menggantikan hamparan dan alat berasingan.' } },
+    features: { seo: { title: 'Ciri — Mengapa Pasukan Singapura Memilih Vorkhive HRMS', description: 'Layan diri untuk setiap pekerja, CPF automatik dan pematuhan statutori, pemfailan sedia IRAS, dan satu rekod bersepadu untuk cuti, tuntutan, kehadiran dan gaji.' } },
+    pricing: { seo: { title: 'Harga — Pelan HRMS Setiap Pengguna yang Mudah | Vorkhive', description: 'Harga setiap pengguna yang telus untuk Vorkhive HRMS. Mula percuma, naik ke gaji penuh dengan CPF pada pelan Growth, atau hubungi kami untuk Enterprise.' } },
+    faq: { seo: { title: 'Soalan Lazim | Vorkhive HRMS', description: 'Jawapan tentang Vorkhive HRMS — pematuhan CPF dan IRAS, harga, masa persediaan, keselamatan data, dan cara cuti, tuntutan, kehadiran dan gaji berfungsi bersama.' } },
+    customers: { seo: { title: 'Pelanggan — Pasukan Singapura yang Menggunakan Vorkhive', description: 'Lihat cara PKS Singapura menggunakan Vorkhive HRMS untuk menguruskan cuti, tuntutan, kehadiran dan gaji CPF pada satu platform. Baca kata pelanggan kami.' } },
     legalNotice: 'Dokumen ini disediakan dalam bahasa Inggeris, iaitu versi yang mengawal. Terjemahan ini adalah untuk kemudahan sahaja; jika terdapat sebarang percanggahan, versi bahasa Inggeris akan diguna pakai.',
   },
 };

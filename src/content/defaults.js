@@ -12,7 +12,7 @@ export const defaultContent = {
     description: 'The all-in-one HRMS for Singapore. Run leave, claims, attendance, payroll and CPF compliance in one platform. MOM-ready. Start free — no card.',
   },
   ui: {
-    nav: { platform: 'Platform', features: 'Features', pricing: 'Pricing', faq: 'FAQ', customers: 'Customers' },
+    nav: { platform: 'Platform', features: 'Features', pricing: 'Pricing', faq: 'FAQ', customers: 'Customers', contact: 'Contact' },
     signIn: 'Sign in',
     startFree: 'Start free',
     language: 'Language',
@@ -125,7 +125,7 @@ export const defaultContent = {
   footer: {
     brandText: 'The Singapore-compliant HRMS for leave, claims, attendance and payroll. Run all of HR from one login.',
     columns: [
-      { title: 'Platform', links: [{ label: 'Singapore payroll', href: '/payroll-singapore' }, { label: 'CPF payroll', href: '/cpf-payroll' }, { label: 'Leave management', href: '/#platform' }, { label: 'Attendance', href: '/#platform' }, { label: 'Pricing', href: '/#pricing' }] },
+      { title: 'Platform', links: [{ label: 'Singapore payroll', href: '/payroll-singapore' }, { label: 'CPF payroll', href: '/cpf-payroll' }, { label: 'Leave management', href: '/platform' }, { label: 'Attendance', href: '/platform' }, { label: 'Pricing', href: '/pricing' }] },
       { title: 'Company', links: [{ label: 'About', href: '#' }, { label: 'Careers', href: '#' }, { label: 'Blog', href: '#' }, { label: 'Contact', href: '/contact' }] },
       { title: 'Resources', links: [{ label: 'Help center', href: '#' }, { label: 'Security', href: '#' }, { label: 'Status', href: '#' }, { label: 'CPF guide', href: '/cpf-payroll' }] },
     ],
@@ -153,7 +153,7 @@ export const defaultContent = {
         { q: 'How long does setup take?', a: 'Most Singapore teams are live within a day — import staff, set entitlements, and run your first CPF-compliant payroll the same week.' },
       ],
       relatedHeading: 'Explore more',
-      related: [{ label: 'CPF payroll software', href: '/cpf-payroll' }, { label: 'Pricing', href: '/#pricing' }, { label: 'The platform', href: '/#platform' }],
+      related: [{ label: 'CPF payroll software', href: '/cpf-payroll' }, { label: 'Pricing', href: '/pricing' }, { label: 'The platform', href: '/platform' }],
       finalPrimary: 'Start free', finalSecondary: 'Talk to our team',
     },
     cpf: {
@@ -175,7 +175,7 @@ export const defaultContent = {
         { q: 'Is the CPF data used for IRAS filing?', a: 'Yes. The same payroll data flows into IRAS-ready year-end reporting (IR8A).' },
       ],
       relatedHeading: 'Explore more',
-      related: [{ label: 'Singapore payroll software', href: '/payroll-singapore' }, { label: 'Pricing', href: '/#pricing' }, { label: 'The platform', href: '/#platform' }],
+      related: [{ label: 'Singapore payroll software', href: '/payroll-singapore' }, { label: 'Pricing', href: '/pricing' }, { label: 'The platform', href: '/platform' }],
       finalPrimary: 'Start free', finalSecondary: 'Talk to our team',
     },
     book: {
@@ -204,6 +204,21 @@ export const defaultContent = {
       doneTitle: 'Request Received!',
       doneBody: 'Thank you for your interest in Vorkhive. Our team will review your information and contact you shortly to set up your free trial.',
       doneBtn: 'Return to Homepage',
+    },
+    platform: {
+      seo: { title: 'The Vorkhive HRMS Platform — Leave, Payroll & People | Vorkhive', description: 'One Singapore HRMS for leave and self-service, payroll with CPF, and time and growth. See the Vorkhive platform that replaces spreadsheets and disconnected tools.' },
+    },
+    features: {
+      seo: { title: 'Features — Why Singapore Teams Choose Vorkhive HRMS', description: 'Self-service for every employee, automatic CPF and statutory compliance, IRAS-ready filing, and one connected record for leave, claims, attendance and payroll.' },
+    },
+    pricing: {
+      seo: { title: 'Pricing — Simple Per-User HRMS Plans | Vorkhive', description: 'Transparent per-user pricing for Vorkhive HRMS. Start free, scale to full payroll with CPF on the Growth plan, or talk to us about Enterprise.' },
+    },
+    faq: {
+      seo: { title: 'Frequently Asked Questions | Vorkhive HRMS', description: 'Answers about Vorkhive HRMS — CPF and IRAS compliance, pricing, setup time, data security, and how leave, claims, attendance and payroll work together.' },
+    },
+    customers: {
+      seo: { title: 'Customers — Singapore Teams Running on Vorkhive', description: 'See how Singapore SMEs use Vorkhive HRMS to run leave, claims, attendance and CPF payroll on one platform. Read what our customers say.' },
     },
   },
 };

@@ -5,7 +5,7 @@ export default {
     description: '新加坡全方位人力资源管理系统（HRMS）。在一个平台上处理休假、报销、考勤、薪资与公积金（CPF）合规，符合人力部（MOM）要求。免费开始，无需信用卡。',
   },
   ui: {
-    nav: { platform: '平台', features: '功能', pricing: '价格', faq: '常见问题', customers: '客户' },
+    nav: { platform: '平台', features: '功能', pricing: '价格', faq: '常见问题', customers: '客户', contact: '联系' },
     signIn: '登录',
     startFree: '免费开始',
     language: '语言',
@@ -108,7 +108,7 @@ export default {
   footer: {
     brandText: '符合新加坡法规的 HRMS，涵盖休假、报销、考勤与薪资。一次登录，运营全部人力工作。',
     columns: [
-      { title: '平台', links: [{ label: '新加坡薪资', href: '/payroll-singapore' }, { label: '公积金薪资', href: '/cpf-payroll' }, { label: '休假管理', href: '/#platform' }, { label: '考勤', href: '/#platform' }, { label: '价格', href: '/#pricing' }] },
+      { title: '平台', links: [{ label: '新加坡薪资', href: '/payroll-singapore' }, { label: '公积金薪资', href: '/cpf-payroll' }, { label: '休假管理', href: '/platform' }, { label: '考勤', href: '/platform' }, { label: '价格', href: '/pricing' }] },
       { title: '公司', links: [{ label: '关于我们', href: '#' }, { label: '招贤纳士', href: '#' }, { label: '博客', href: '#' }, { label: '联系我们', href: '/contact' }] },
       { title: '资源', links: [{ label: '帮助中心', href: '#' }, { label: '安全', href: '#' }, { label: '系统状态', href: '#' }, { label: '公积金指南', href: '/cpf-payroll' }] },
     ],
@@ -136,7 +136,7 @@ export default {
         { q: '设置需要多久？', a: '多数新加坡团队一天内即可上线——导入员工、设定额度，并在同一周运行首次符合公积金规定的薪资。' },
       ],
       relatedHeading: '了解更多',
-      related: [{ label: '公积金薪资软件', href: '/cpf-payroll' }, { label: '价格', href: '/#pricing' }, { label: '平台', href: '/#platform' }],
+      related: [{ label: '公积金薪资软件', href: '/cpf-payroll' }, { label: '价格', href: '/pricing' }, { label: '平台', href: '/platform' }],
       finalPrimary: '免费开始', finalSecondary: '联系我们的团队',
     },
     cpf: {
@@ -158,7 +158,7 @@ export default {
         { q: '公积金数据会用于税务局申报吗？', a: '会。同一份薪资数据会进入可直接用于税务局的年终报告（IR8A）。' },
       ],
       relatedHeading: '了解更多',
-      related: [{ label: '新加坡薪资软件', href: '/payroll-singapore' }, { label: '价格', href: '/#pricing' }, { label: '平台', href: '/#platform' }],
+      related: [{ label: '新加坡薪资软件', href: '/payroll-singapore' }, { label: '价格', href: '/pricing' }, { label: '平台', href: '/platform' }],
       finalPrimary: '免费开始', finalSecondary: '联系我们的团队',
     },
     book: {
@@ -188,6 +188,11 @@ export default {
       doneBody: '感谢你对 Vorkhive 的关注。我们的团队将审核你的信息，并尽快与你联系以设置免费试用。',
       doneBtn: '返回首页',
     },
+    platform: { seo: { title: 'Vorkhive HRMS 平台 — 假期、薪资与人事 | Vorkhive', description: '一个新加坡 HRMS，统一管理假期与员工自助、含公积金（CPF）的薪资，以及考勤与成长。了解可取代电子表格与分散工具的 Vorkhive 平台。' } },
+    features: { seo: { title: '功能 — 新加坡团队为何选择 Vorkhive HRMS', description: '每位员工的自助服务、自动公积金与法定合规、可直接用于税务局（IRAS）的申报，以及假期、报销、考勤与薪资的统一记录。' } },
+    pricing: { seo: { title: '价格 — 简单的按用户 HRMS 套餐 | Vorkhive', description: 'Vorkhive HRMS 透明的按用户定价。免费开始，在 Growth 套餐升级到含公积金的完整薪资，或就 Enterprise 与我们联系。' } },
+    faq: { seo: { title: '常见问题 | Vorkhive HRMS', description: '关于 Vorkhive HRMS 的解答 — 公积金与税务局合规、价格、设置时间、数据安全，以及假期、报销、考勤与薪资如何协同。' } },
+    customers: { seo: { title: '客户 — 使用 Vorkhive 的新加坡团队', description: '了解新加坡中小企业如何使用 Vorkhive HRMS 在一个平台上管理假期、报销、考勤与公积金薪资。看看客户怎么说。' } },
     legalNotice: '本文件以英文版本为准。以下译文仅供参考；如有任何不一致，概以英文版本为准。',
   },
 };
