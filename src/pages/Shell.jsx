@@ -24,14 +24,24 @@ export function CtaButton({ label, to = 'register', className, style }) {
   return <a href={REGISTER_URL} className={className} style={style}>{label}</a>;
 }
 
+export function HexMark() {
+  return (
+    <svg viewBox="0 0 48 48" fill="none" aria-hidden="true">
+      <polygon points="24,3 42.6,13.5 42.6,34.5 24,45 5.4,34.5 5.4,13.5" stroke="currentColor" strokeWidth="2.6" strokeLinejoin="round" />
+      <path d="M13 19 L24 27 L35 19" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" />
+      <path d="M13 26 L24 34 L35 26" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
 export function Logo() {
   const c = useContent();
   const b = c.branding || {};
   return (
     <Link to="/" className="logo" aria-label={`${b.brandName || 'Vorkhive'} home`}>
       {b.logoImage
-        ? <img src={b.logoImage} alt={b.brandName || 'Vorkhive'} style={{ height: 36, borderRadius: 8 }} />
-        : <span className="mark" aria-hidden="true">{(b.brandName || 'V').charAt(0)}</span>}
+        ? <img src={b.logoImage} alt={b.brandName || 'Vorkhive'} style={{ height: 38 }} />
+        : <span className="mark" aria-hidden="true"><HexMark /></span>}
       <span>{b.brandName || 'Vorkhive'}<small>{b.brandTag || ''}</small></span>
     </Link>
   );

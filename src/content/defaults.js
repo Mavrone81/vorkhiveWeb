@@ -4,7 +4,7 @@
 export const defaultContent = {
   branding: {
     brandName: 'Vorkhive',
-    brandTag: 'SG COMPLIANCE · V2',
+    brandTag: 'CRM · HR · PAYROLL',
     logoImage: '', // empty -> show the "V" mark; otherwise an uploaded image URL
   },
   seo: {

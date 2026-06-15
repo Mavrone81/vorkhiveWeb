@@ -83,7 +83,7 @@ function Contact() {
                             <div style={{ background: 'white', padding: '2.5rem', borderRadius: 'var(--radius-xl)', boxShadow: 'var(--shadow-lg)', border: '1px solid var(--border)' }}>
                                 <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
 
-                                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem' }}>
+                                    <div className="vk-form-row">
                                         <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
                                             <label htmlFor="name" style={{ fontWeight: 600, fontSize: '0.875rem' }}>{t.lblName || 'Full Name *'}</label>
                                             <input
@@ -113,7 +113,7 @@ function Contact() {
                                         </div>
                                     </div>
 
-                                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem' }}>
+                                    <div className="vk-form-row">
                                         <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
                                             <label htmlFor="company" style={{ fontWeight: 600, fontSize: '0.875rem' }}>{t.lblCompany || 'Company Name *'}</label>
                                             <input
