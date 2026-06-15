@@ -5,7 +5,7 @@ export default {
     description: '新加坡全方位人力资源管理系统（HRMS）。在一个平台上处理休假、报销、考勤、薪资与公积金（CPF）合规，符合人力部（MOM）要求。免费开始，无需信用卡。',
   },
   ui: {
-    nav: { platform: '平台', features: '功能', pricing: '价格', faq: '常见问题', customers: '客户', contact: '联系' },
+    nav: { home: '首页', platform: '平台', features: '功能', pricing: '价格', faq: '常见问题', customers: '客户', contact: '联系' },
     signIn: '登录',
     startFree: '免费开始',
     language: '语言',

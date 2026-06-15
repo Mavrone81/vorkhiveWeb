@@ -5,7 +5,7 @@ export default {
     description: 'HRMS lengkap untuk Singapura. Urus cuti, tuntutan, kehadiran, gaji dan pematuhan CPF dalam satu platform. Sedia MOM. Mula percuma — tiada kad.',
   },
   ui: {
-    nav: { platform: 'Platform', features: 'Ciri', pricing: 'Harga', faq: 'Soalan Lazim', customers: 'Pelanggan', contact: 'Hubungi' },
+    nav: { home: 'Laman Utama', platform: 'Platform', features: 'Ciri', pricing: 'Harga', faq: 'Soalan Lazim', customers: 'Pelanggan', contact: 'Hubungi' },
     signIn: 'Log masuk',
     startFree: 'Mula percuma',
     language: 'Bahasa',

@@ -78,6 +78,7 @@ export function SiteHeader() {
   // Each tab is its own route; React Router's per-language basename adds the
   // /zh, /ms, … prefix automatically, so the paths here stay relative.
   const NAV = [
+    ['/', navL.home || 'Home'],
     ['/platform', navL.platform || 'Platform'],
     ['/features', navL.features || 'Features'],
     ['/pricing', navL.pricing || 'Pricing'],

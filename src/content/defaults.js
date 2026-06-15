@@ -12,7 +12,7 @@ export const defaultContent = {
     description: 'The all-in-one HRMS for Singapore. Run leave, claims, attendance, payroll and CPF compliance in one platform. MOM-ready. Start free — no card.',
   },
   ui: {
-    nav: { platform: 'Platform', features: 'Features', pricing: 'Pricing', faq: 'FAQ', customers: 'Customers', contact: 'Contact' },
+    nav: { home: 'Home', platform: 'Platform', features: 'Features', pricing: 'Pricing', faq: 'FAQ', customers: 'Customers', contact: 'Contact' },
     signIn: 'Sign in',
     startFree: 'Start free',
     language: 'Language',
