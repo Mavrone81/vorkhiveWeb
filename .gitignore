@@ -23,6 +23,7 @@ dist-ssr
 /usage.json
 /bookings.json
 /analytics.json
+/geo-cache.json
 /conversations.json
 /uploads/
 /data/

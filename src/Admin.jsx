@@ -358,17 +358,18 @@ function Analytics({ token }) {
   const [err, setErr] = useState('');
   const [days, setDays] = useState(30);
 
-  const load = (d) => {
-    setData(null); setErr('');
-    fetch(`/api/analytics?days=${d}`, { headers: { Authorization: `Bearer ${token}` } })
+  useEffect(() => {
+    let alive = true;
+    fetch(`/api/analytics?days=${days}`, { headers: { Authorization: `Bearer ${token}` } })
       .then((r) => (r.ok ? r.json() : Promise.reject(new Error('load'))))
-      .then(setData)
-      .catch(() => setErr('Could not load analytics.'));
-  };
-  useEffect(() => { load(days); }, [token, days]);
+      .then((d) => { if (alive) { setData(d); setErr(''); } })
+      .catch(() => { if (alive) setErr('Could not load analytics.'); });
+    return () => { alive = false; };
+  }, [token, days]);
 
   const num = (n) => (n || 0).toLocaleString('en-US');
   const when = (ts) => new Date(ts).toLocaleString('en-SG', { dateStyle: 'medium', timeStyle: 'short' });
+  const countryFlag = (cc) => (/^[A-Za-z]{2}$/.test(cc) ? cc.toUpperCase().replace(/./g, (c) => String.fromCodePoint(127397 + c.charCodeAt(0))) : '');
   const shortUA = (ua) => {
     if (!ua) return '—';
     const m = ua.match(/(Edg|OPR|Chrome|Firefox|Safari)\/[\d.]+/);
@@ -413,24 +414,37 @@ function Analytics({ token }) {
       </div>
 
       <h3 style={{ ...head, marginTop: 22 }}>Recent visitors</h3>
+      <p style={{ fontSize: '.76rem', color: '#94a3b8', margin: '0 0 8px' }}>
+        Location is derived from the IP address (city-level, approximate) — a precise street address can't be obtained from an IP.
+      </p>
       <div style={panel}>
         <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '.84rem' }}>
           <thead><tr style={{ background: '#f8fafc', borderBottom: '1px solid #e2e8f0' }}>
-            {['IP address', 'Last seen', 'Last page', 'Views', 'Actions', 'Device'].map((h) => <th key={h} style={th}>{h}</th>)}
+            {['IP address', 'Approx. location', 'Last seen', 'Last page', 'Views', 'Device'].map((h) => <th key={h} style={th}>{h}</th>)}
           </tr></thead>
           <tbody>
             {data.visitors.length === 0 ? (
               <tr><td colSpan="6" style={{ padding: 26, textAlign: 'center', color: '#94a3b8' }}>No visitors recorded yet.</td></tr>
-            ) : data.visitors.map((v) => (
-              <tr key={v.ip}>
-                <td style={{ ...td, fontFamily: 'monospace' }}>{v.ip}</td>
-                <td style={td}>{when(v.lastTs)}</td>
-                <td style={td}>{v.lastPath || '—'}</td>
-                <td style={td}>{num(v.views)}</td>
-                <td style={td}>{num(v.events)}</td>
-                <td style={{ ...td, color: '#64748b' }}>{shortUA(v.ua)}</td>
-              </tr>
-            ))}
+            ) : data.visitors.map((v) => {
+              const g = v.geo;
+              const loc = v.private ? 'Local / private network' : (g && g.location ? g.location : 'Locating…');
+              const flag = g && g.countryCode ? countryFlag(g.countryCode) : '';
+              const map = g && g.lat != null ? `https://www.google.com/maps?q=${g.lat},${g.lon}` : null;
+              return (
+                <tr key={v.ip}>
+                  <td style={{ ...td, fontFamily: 'monospace' }}>{v.ip}</td>
+                  <td style={td}>
+                    {flag && <span style={{ marginRight: 5 }}>{flag}</span>}
+                    {map ? <a href={map} target="_blank" rel="noopener noreferrer" style={{ color: '#5B3DF5' }}>{loc}</a> : <span style={{ color: g || v.private ? 'inherit' : '#94a3b8' }}>{loc}</span>}
+                    {g && g.postal ? <span style={{ color: '#94a3b8' }}> · {g.postal}</span> : null}
+                  </td>
+                  <td style={td}>{when(v.lastTs)}</td>
+                  <td style={td}>{v.lastPath || '—'}</td>
+                  <td style={td}>{num(v.views)}</td>
+                  <td style={{ ...td, color: '#64748b' }}>{shortUA(v.ua)}</td>
+                </tr>
+              );
+            })}
           </tbody>
         </table>
       </div>

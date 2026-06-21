@@ -762,8 +762,8 @@ function flushAnalytics() {
 }
 // Batch writes so high-frequency events don't hammer the disk.
 setInterval(flushAnalytics, 10_000).unref?.();
-process.on('SIGTERM', () => { flushAnalytics(); });
-process.on('SIGINT', () => { flushAnalytics(); process.exit(0); });
+process.on('SIGTERM', () => { flushAnalytics(); flushGeo(); });
+process.on('SIGINT', () => { flushAnalytics(); flushGeo(); process.exit(0); });
 
 const clipStr = (s, n) => (typeof s === 'string' ? s.slice(0, n) : '');
 function recordEvent(req, type, extra = {}) {
@@ -783,7 +783,77 @@ function recordEvent(req, type, extra = {}) {
         analyticsEvents.splice(0, analyticsEvents.length - ANALYTICS_MAX);
     }
     analyticsDirty = true;
+    if (req.ip) queueGeo(req.ip);
 }
+
+// ---- IP geolocation -------------------------------------------------------
+// Resolve each visitor IP to an approximate location (city/region/country),
+// ISP and lat/long via a keyless HTTPS lookup (ipwho.is). Results are cached to
+// disk so each IP is only looked up once; private/local IPs are skipped. Note:
+// IP geolocation is city-level and approximate — a precise street address
+// cannot be derived from an IP.
+const GEO_FILE = path.join(__dirname, 'geo-cache.json');
+let geoCache = {};
+try { geoCache = JSON.parse(fs.readFileSync(GEO_FILE, 'utf8')) || {}; } catch { geoCache = {}; }
+let geoDirty = false;
+function flushGeo() {
+    if (!geoDirty) return;
+    geoDirty = false;
+    try { fs.writeFileSync(GEO_FILE, JSON.stringify(geoCache)); }
+    catch (e) { console.error('geo write:', e.message); }
+}
+setInterval(flushGeo, 10_000).unref?.();
+
+function isPrivateIP(ip) {
+    if (!ip) return true;
+    const a = ip.replace(/^::ffff:/, ''); // unwrap IPv4-mapped IPv6
+    if (a === '127.0.0.1' || a === '::1' || a === 'localhost') return true;
+    if (/^10\./.test(a) || /^192\.168\./.test(a) || /^169\.254\./.test(a)) return true;
+    if (/^172\.(1[6-9]|2\d|3[01])\./.test(a)) return true;
+    if (/^(f[cd]|fe80)/i.test(a)) return true; // IPv6 ULA / link-local
+    return false;
+}
+
+const geoQueue = [];
+const geoInflight = new Set();
+function queueGeo(ip) {
+    if (!ip || isPrivateIP(ip) || geoCache[ip] || geoInflight.has(ip)) return;
+    geoInflight.add(ip);
+    geoQueue.push(ip);
+}
+
+async function lookupGeo(ip) {
+    // freeipapi.com: keyless, HTTPS, commercial-friendly. City-level accuracy.
+    const res = await fetch(`https://freeipapi.com/api/json/${encodeURIComponent(ip.replace(/^::ffff:/, ''))}`, {
+        signal: AbortSignal.timeout(6000),
+        headers: { 'User-Agent': 'vorkhive-analytics/1.0', Accept: 'application/json' },
+    });
+    if (!res.ok) return null;
+    const d = await res.json();
+    if (!d || !d.countryCode || d.countryName === '-') return null;
+    const clean = (v) => (v && v !== '-' ? String(v) : '');
+    return {
+        city: clean(d.cityName), region: clean(d.regionName), country: clean(d.countryName),
+        countryCode: clean(d.countryCode), postal: clean(d.zipCode),
+        lat: d.latitude ?? null, lon: d.longitude ?? null,
+        ts: Date.now(),
+    };
+}
+
+// Drain the lookup queue one IP at a time, gently (free API, ~rate-limited).
+setInterval(async () => {
+    const ip = geoQueue.shift();
+    if (!ip) return;
+    try {
+        const geo = await lookupGeo(ip);
+        geoCache[ip] = geo || { failed: true, ts: Date.now() };
+        geoDirty = true;
+    } catch { geoInflight.delete(ip); return; }
+    geoInflight.delete(ip);
+}, 1500).unref?.();
+
+// Backfill any IPs already in the event log that we haven't resolved yet.
+for (const ev of analyticsEvents) queueGeo(ev.ip);
 
 // Public: browser beacon for interaction events (page views are server-side).
 app.post('/api/track', (req, res) => {
@@ -818,6 +888,18 @@ app.get('/api/analytics', requireAdmin, (req, res) => {
     }
     const sortTop = (obj, n) => Object.entries(obj).sort((a, b) => b[1] - a[1]).slice(0, n).map(([k, count]) => ({ k, count }));
 
+    // Attach the cached geolocation (city/region/country, ISP) to each visitor.
+    const geoFor = (ip) => {
+        const g = geoCache[ip];
+        if (!g || g.failed) return null;
+        const location = [g.city, g.region, g.country].filter(Boolean).join(', ');
+        return { location, city: g.city, region: g.region, country: g.country, countryCode: g.countryCode, postal: g.postal, lat: g.lat, lon: g.lon };
+    };
+    const visitorRows = [...visitors.values()]
+        .sort((a, b) => b.lastTs - a.lastTs)
+        .slice(0, 200)
+        .map((v) => ({ ...v, geo: geoFor(v.ip), private: isPrivateIP(v.ip) }));
+
     res.json({
         days,
         summary: {
@@ -833,7 +915,7 @@ app.get('/api/analytics', requireAdmin, (req, res) => {
         byType,
         topPages: sortTop(pageCounts, 15),
         topClicks: sortTop(clickCounts, 20),
-        visitors: [...visitors.values()].sort((a, b) => b.lastTs - a.lastTs).slice(0, 200),
+        visitors: visitorRows,
         recent: events.slice(-300).reverse(),
     });
 });
