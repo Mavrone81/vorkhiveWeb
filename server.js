@@ -741,6 +741,103 @@ app.post('/api/slack/events', (req, res) => {
     }
 });
 
+// ---- Visitor analytics (page views + interaction events) -----------------
+// First-party, no third-party trackers. Page views are recorded server-side
+// (authoritative client IP) in the catch-all renderer below; interaction events
+// (chat opened/messaged, WhatsApp/Call/Email clicks, and which parts of the page
+// are clicked) are beaconed from the browser to POST /api/track. The admin
+// "Visitors" tab reads the aggregate via GET /api/analytics.
+const ANALYTICS_FILE = path.join(__dirname, 'analytics.json');
+const ANALYTICS_MAX = 20000; // keep the most recent N events; older ones are dropped
+const TRACK_TYPES = new Set(['pageview', 'chat_open', 'chat_message', 'whatsapp', 'call', 'email', 'click', 'cta']);
+
+let analyticsEvents = [];
+try { analyticsEvents = JSON.parse(fs.readFileSync(ANALYTICS_FILE, 'utf8')) || []; } catch { analyticsEvents = []; }
+let analyticsDirty = false;
+function flushAnalytics() {
+    if (!analyticsDirty) return;
+    analyticsDirty = false;
+    try { fs.writeFileSync(ANALYTICS_FILE, JSON.stringify(analyticsEvents)); }
+    catch (e) { console.error('analytics write:', e.message); }
+}
+// Batch writes so high-frequency events don't hammer the disk.
+setInterval(flushAnalytics, 10_000).unref?.();
+process.on('SIGTERM', () => { flushAnalytics(); });
+process.on('SIGINT', () => { flushAnalytics(); process.exit(0); });
+
+const clipStr = (s, n) => (typeof s === 'string' ? s.slice(0, n) : '');
+function recordEvent(req, type, extra = {}) {
+    if (!TRACK_TYPES.has(type)) return;
+    analyticsEvents.push({
+        id: crypto.randomBytes(6).toString('hex'),
+        ts: Date.now(),
+        type,
+        ip: req.ip || '',
+        path: clipStr(extra.path || req.path || '', 200),
+        label: clipStr(extra.label, 200),
+        lang: clipStr(extra.lang, 8),
+        ref: clipStr(req.get('referer'), 300),
+        ua: clipStr(req.get('user-agent'), 300),
+    });
+    if (analyticsEvents.length > ANALYTICS_MAX) {
+        analyticsEvents.splice(0, analyticsEvents.length - ANALYTICS_MAX);
+    }
+    analyticsDirty = true;
+}
+
+// Public: browser beacon for interaction events (page views are server-side).
+app.post('/api/track', (req, res) => {
+    const b = req.body || {};
+    recordEvent(req, String(b.type || ''), { path: b.path, label: b.label, lang: b.lang });
+    res.status(204).end();
+});
+
+// Admin: aggregated analytics + recent event feed.
+app.get('/api/analytics', requireAdmin, (req, res) => {
+    const days = Math.min(Math.max(parseInt(req.query.days, 10) || 30, 1), 365);
+    const since = Date.now() - days * 86400_000;
+    const events = analyticsEvents.filter((e) => e.ts >= since);
+
+    const byType = {};
+    const pageCounts = {};
+    const clickCounts = {};
+    const visitors = new Map(); // ip -> { ip, ua, views, events, lastTs, lastPath }
+    const ipSet = new Set();
+
+    for (const e of events) {
+        byType[e.type] = (byType[e.type] || 0) + 1;
+        if (e.ip) ipSet.add(e.ip);
+        if (e.type === 'pageview' && e.path) pageCounts[e.path] = (pageCounts[e.path] || 0) + 1;
+        if ((e.type === 'click' || e.type === 'cta') && e.label) clickCounts[e.label] = (clickCounts[e.label] || 0) + 1;
+        if (e.ip) {
+            const v = visitors.get(e.ip) || { ip: e.ip, ua: e.ua, views: 0, events: 0, lastTs: 0, lastPath: '' };
+            if (e.type === 'pageview') v.views += 1; else v.events += 1;
+            if (e.ts >= v.lastTs) { v.lastTs = e.ts; v.lastPath = e.path || v.lastPath; v.ua = e.ua || v.ua; }
+            visitors.set(e.ip, v);
+        }
+    }
+    const sortTop = (obj, n) => Object.entries(obj).sort((a, b) => b[1] - a[1]).slice(0, n).map(([k, count]) => ({ k, count }));
+
+    res.json({
+        days,
+        summary: {
+            pageviews: byType.pageview || 0,
+            uniqueIPs: ipSet.size,
+            chatOpens: byType.chat_open || 0,
+            chatMessages: byType.chat_message || 0,
+            whatsapp: byType.whatsapp || 0,
+            call: byType.call || 0,
+            email: byType.email || 0,
+            clicks: (byType.click || 0) + (byType.cta || 0),
+        },
+        byType,
+        topPages: sortTop(pageCounts, 15),
+        topClicks: sortTop(clickCounts, 20),
+        visitors: [...visitors.values()].sort((a, b) => b.lastTs - a.lastTs).slice(0, 200),
+        recent: events.slice(-300).reverse(),
+    });
+});
+
 // SSR: render each page on request with the live (admin-edited) content so
 // crawlers and the first paint get the real, current content. Falls back to a
 // client-rendered shell if the SSR bundle is unavailable or rendering throws.
@@ -858,7 +955,7 @@ function applyHomeSeo(html, content, lang) {
 
 // Inner pages: translated title/meta/FAQ from content (lang-specific) + hreflang
 // for pages that exist in every language; English ROUTE_SEO for the rest.
-const PAGE_KEY_BY_ROUTE = { '/payroll-singapore': 'payroll', '/cpf-payroll': 'cpf', '/book': 'book', '/contact': 'contact', '/platform': 'platform', '/features': 'features', '/pricing': 'pricing', '/faq': 'faq', '/customers': 'customers' };
+const PAGE_KEY_BY_ROUTE = { '/payroll-singapore': 'payroll', '/cpf-payroll': 'cpf', '/leave-management': 'leave', '/claims': 'claims', '/book': 'book', '/contact': 'contact', '/platform': 'platform', '/features': 'features', '/pricing': 'pricing', '/faq': 'faq', '/customers': 'customers' };
 function pageHreflang(rest) {
     const tags = ['en', 'zh', 'ms', 'ta', 'th']
         .map((l) => `<link rel="alternate" hreflang="${I18N[l].hreflang}" href="${l === 'en' ? 'https://vorkhive.com' : `https://vorkhive.com/${l}`}${rest}" />`)
@@ -899,6 +996,8 @@ function applyInnerSeo(html, rest, content, lang) {
 app.get(/(.*)/, (req, res) => {
     try {
         const { lang, rest } = parseLang(req.path);
+        // Record a page view with the real client IP (skip asset-like paths).
+        if (!/\.[a-z0-9]+$/i.test(req.path)) recordEvent(req, 'pageview', { path: req.path, lang });
         const content = buildLangContent(lang);
         const appHtml = ssr && ssr.render ? ssr.render(req.path, content, lang) : '';
         const stateScript = content

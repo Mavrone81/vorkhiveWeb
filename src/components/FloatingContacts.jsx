@@ -1,6 +1,7 @@
 // Floating quick-contact buttons (WhatsApp, Call, Email).
 // Numbers/emails come from editable content (admin CMS), with sensible fallbacks.
 import { useContent } from '../content/ContentContext.jsx';
+import { track } from '../utils.js';
 
 export default function FloatingContacts() {
   const c = useContent();
@@ -34,7 +35,7 @@ export default function FloatingContacts() {
   ];
 
   return (
-    <div className="vfab">
+    <div className="vfab" data-no-track>
       <style>{`
         .vfab{position:fixed;left:24px;bottom:24px;z-index:9998;display:flex;flex-direction:column-reverse;gap:12px}
         .vfab-btn{position:relative;width:54px;height:54px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff;box-shadow:0 6px 20px rgba(15,23,42,.28);transition:transform .15s ease, box-shadow .15s ease}
@@ -50,6 +51,7 @@ export default function FloatingContacts() {
           className="vfab-btn"
           href={a.href}
           aria-label={a.label}
+          onClick={() => track(a.key)}
           style={{ background: a.color }}
           {...(a.external ? { target: '_blank', rel: 'noopener noreferrer' } : {})}
         >

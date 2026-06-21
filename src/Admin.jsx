@@ -136,7 +136,7 @@ function Admin() {
     );
   }
 
-  const TABS = [['content', 'Site content'], ['contacts', 'Contacts & branding'], ['leads', 'Leads'], ['demos', 'Demos'], ['usage', 'API usage']];
+  const TABS = [['content', 'Site content'], ['contacts', 'Contacts & branding'], ['leads', 'Leads'], ['demos', 'Demos'], ['analytics', 'Visitors'], ['usage', 'API usage']];
 
   return (
     <div style={{ background: '#F4F5FA', minHeight: '100vh', fontFamily: 'Inter, system-ui, sans-serif', paddingBottom: 80 }}>
@@ -150,7 +150,7 @@ function Admin() {
         </div>
         <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 12 }}>
           {saveMsg && <span style={{ fontSize: '.82rem', color: saveMsg.startsWith('Saved') ? '#16a34a' : '#ef4444' }}>{saveMsg}</span>}
-          {tab !== 'leads' && <button onClick={save} disabled={saving} style={{ ...btn, background: '#16a34a', color: '#fff', border: 'none' }}>{saving ? 'Saving…' : 'Save changes'}</button>}
+          {!['leads', 'analytics', 'usage'].includes(tab) && <button onClick={save} disabled={saving} style={{ ...btn, background: '#16a34a', color: '#fff', border: 'none' }}>{saving ? 'Saving…' : 'Save changes'}</button>}
           <Link to="/" style={{ fontSize: '.82rem', color: '#64748b' }}>View site ↗</Link>
           <button onClick={handleLogout} style={{ ...btn, color: '#dc2626', borderColor: '#fecaca' }}>Log out</button>
         </div>
@@ -346,7 +346,122 @@ function Admin() {
 
         {tab === 'leads' && <Leads contacts={contacts} />}
         {tab === 'demos' && <Demos token={token} />}
+        {tab === 'analytics' && <Analytics token={token} />}
         {tab === 'usage' && <Usage token={token} />}
+      </div>
+    </div>
+  );
+}
+
+function Analytics({ token }) {
+  const [data, setData] = useState(null);
+  const [err, setErr] = useState('');
+  const [days, setDays] = useState(30);
+
+  const load = (d) => {
+    setData(null); setErr('');
+    fetch(`/api/analytics?days=${d}`, { headers: { Authorization: `Bearer ${token}` } })
+      .then((r) => (r.ok ? r.json() : Promise.reject(new Error('load'))))
+      .then(setData)
+      .catch(() => setErr('Could not load analytics.'));
+  };
+  useEffect(() => { load(days); }, [token, days]);
+
+  const num = (n) => (n || 0).toLocaleString('en-US');
+  const when = (ts) => new Date(ts).toLocaleString('en-SG', { dateStyle: 'medium', timeStyle: 'short' });
+  const shortUA = (ua) => {
+    if (!ua) return '—';
+    const m = ua.match(/(Edg|OPR|Chrome|Firefox|Safari)\/[\d.]+/);
+    const os = /iPhone|iPad/.test(ua) ? 'iOS' : /Android/.test(ua) ? 'Android' : /Mac/.test(ua) ? 'Mac' : /Windows/.test(ua) ? 'Windows' : /Linux/.test(ua) ? 'Linux' : '';
+    return [(m ? m[0].split('/')[0].replace('Edg', 'Edge').replace('OPR', 'Opera') : 'Other'), os].filter(Boolean).join(' · ');
+  };
+
+  if (err) return <div style={{ color: '#dc2626' }}>{err}</div>;
+  if (!data) return <div style={{ color: '#64748b' }}>Loading…</div>;
+
+  const s = data.summary;
+  const cards = [
+    ['Page views', s.pageviews], ['Unique visitors (IPs)', s.uniqueIPs],
+    ['Chat opened', s.chatOpens], ['Chat messages', s.chatMessages],
+    ['WhatsApp clicks', s.whatsapp], ['Call clicks', s.call],
+    ['Email clicks', s.email], ['Element clicks', s.clicks],
+  ];
+  const card = { background: '#fff', border: '1px solid #e2e8f0', borderRadius: 12, padding: '14px 16px' };
+  const th = { padding: '9px 12px', fontWeight: 600 };
+  const td = { padding: '9px 12px', borderBottom: '1px solid #eef0f4' };
+  const panel = { background: '#fff', borderRadius: 12, border: '1px solid #e2e8f0', overflow: 'hidden', marginTop: 18 };
+  const head = { fontFamily: 'Sora, sans-serif', fontWeight: 700, fontSize: '.95rem', margin: '0 0 8px' };
+
+  return (
+    <div>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10, margin: '0 0 14px' }}>
+        <p style={{ fontSize: '.85rem', color: '#64748b', margin: 0 }}>
+          First-party visitor analytics — page views (with IP), chat usage, contact clicks and which parts of the site get clicked.
+        </p>
+        <select value={days} onChange={(e) => setDays(Number(e.target.value))} style={{ marginLeft: 'auto', padding: '6px 10px', borderRadius: 8, border: '1px solid #cbd5e1', fontSize: '.85rem' }}>
+          {[1, 7, 30, 90, 365].map((d) => <option key={d} value={d}>Last {d} day{d > 1 ? 's' : ''}</option>)}
+        </select>
+      </div>
+
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: 12 }}>
+        {cards.map(([label, val]) => (
+          <div key={label} style={card}>
+            <div style={{ fontSize: '1.5rem', fontWeight: 800, fontFamily: 'Sora, sans-serif', color: '#0B0A1A' }}>{num(val)}</div>
+            <div style={{ fontSize: '.78rem', color: '#64748b' }}>{label}</div>
+          </div>
+        ))}
+      </div>
+
+      <h3 style={{ ...head, marginTop: 22 }}>Recent visitors</h3>
+      <div style={panel}>
+        <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '.84rem' }}>
+          <thead><tr style={{ background: '#f8fafc', borderBottom: '1px solid #e2e8f0' }}>
+            {['IP address', 'Last seen', 'Last page', 'Views', 'Actions', 'Device'].map((h) => <th key={h} style={th}>{h}</th>)}
+          </tr></thead>
+          <tbody>
+            {data.visitors.length === 0 ? (
+              <tr><td colSpan="6" style={{ padding: 26, textAlign: 'center', color: '#94a3b8' }}>No visitors recorded yet.</td></tr>
+            ) : data.visitors.map((v) => (
+              <tr key={v.ip}>
+                <td style={{ ...td, fontFamily: 'monospace' }}>{v.ip}</td>
+                <td style={td}>{when(v.lastTs)}</td>
+                <td style={td}>{v.lastPath || '—'}</td>
+                <td style={td}>{num(v.views)}</td>
+                <td style={td}>{num(v.events)}</td>
+                <td style={{ ...td, color: '#64748b' }}>{shortUA(v.ua)}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 18, marginTop: 4 }}>
+        <div>
+          <h3 style={{ ...head, marginTop: 22 }}>Top pages</h3>
+          <div style={panel}>
+            <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '.84rem' }}>
+              <tbody>
+                {data.topPages.length === 0 ? <tr><td style={{ padding: 18, color: '#94a3b8' }}>No data.</td></tr>
+                  : data.topPages.map((p) => (
+                    <tr key={p.k}><td style={td}>{p.k}</td><td style={{ ...td, textAlign: 'right', fontWeight: 600 }}>{num(p.count)}</td></tr>
+                  ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+        <div>
+          <h3 style={{ ...head, marginTop: 22 }}>Most clicked parts</h3>
+          <div style={panel}>
+            <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '.84rem' }}>
+              <tbody>
+                {data.topClicks.length === 0 ? <tr><td style={{ padding: 18, color: '#94a3b8' }}>No clicks recorded yet.</td></tr>
+                  : data.topClicks.map((p) => (
+                    <tr key={p.k}><td style={td}>{p.k}</td><td style={{ ...td, textAlign: 'right', fontWeight: 600 }}>{num(p.count)}</td></tr>
+                  ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
       </div>
     </div>
   );

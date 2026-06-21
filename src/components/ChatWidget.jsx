@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
+import { track } from '../utils.js';
 
 // Floating sales/support chat widget for Vorkhive.
 // Bot replies via POST /api/chat (Claude). "Talk to a human" hands off to the
@@ -52,6 +53,7 @@ export default function ChatWidget() {
 
   useEffect(() => {
     if (open && inputRef.current) inputRef.current.focus();
+    if (open) track('chat_open');
   }, [open]);
 
   // Some browsers (e.g. Edge sleeping tabs / back-forward cache) restore the page
@@ -208,6 +210,7 @@ export default function ChatWidget() {
     const content = (text ?? input).trim();
     if (!content || busy) return;
     setInput('');
+    track('chat_message', { label: content.slice(0, 80) });
 
     // Replying to the "shall I close this chat?" prompt.
     if (awaitingEnd) {
@@ -290,6 +293,7 @@ export default function ChatWidget() {
   return (
     <>
       <button
+        data-no-track
         aria-label={open ? 'Close chat' : 'Open chat'}
         onClick={() => setOpen((o) => !o)}
         style={{
@@ -310,6 +314,7 @@ export default function ChatWidget() {
 
       {open && (
         <div
+          data-no-track
           style={{
             position: 'fixed', bottom: 96, right: 24, zIndex: 9999,
             width: 'min(380px, calc(100vw - 32px))', height: 'min(560px, calc(100vh - 140px))',
