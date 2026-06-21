@@ -7,6 +7,8 @@ import Success from './Success.jsx';
 import Layout from './Layout.jsx';
 import PayrollSingapore from './pages/PayrollSingapore.jsx';
 import CpfPayroll from './pages/CpfPayroll.jsx';
+import LeaveManagement from './pages/LeaveManagement.jsx';
+import ClaimsManagement from './pages/ClaimsManagement.jsx';
 import BookDemo from './pages/BookDemo.jsx';
 import Terms from './pages/Terms.jsx';
 import Privacy from './pages/Privacy.jsx';
@@ -29,6 +31,8 @@ export default function AppRoutes({ content }) {
           <Route path="/customers" element={<CustomersPage />} />
           <Route path="/payroll-singapore" element={<PayrollSingapore />} />
           <Route path="/cpf-payroll" element={<CpfPayroll />} />
+          <Route path="/leave-management" element={<LeaveManagement />} />
+          <Route path="/claims" element={<ClaimsManagement />} />
           <Route path="/book" element={<BookDemo />} />
           <Route path="/terms" element={<Terms />} />
           <Route path="/privacy" element={<Privacy />} />
