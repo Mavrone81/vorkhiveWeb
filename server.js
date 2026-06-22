@@ -47,6 +47,17 @@ const ADMIN_TOKEN = process.env.ADMIN_TOKEN || '';
 app.set('trust proxy', 1);
 app.disable('x-powered-by');
 
+// ── Block automated vulnerability scanners early ────────────────────────────
+// This is a React + Express site: any request for PHP / WordPress / framework
+// debug / config / git paths is hostile recon (e.g. the /debug/default/view
+// Yii probe seen in the logs). Reject with 403 before any parsing or routing,
+// and never let these pollute the visitor analytics.
+const SCANNER_RE = /(\.(php|phtml|asp|aspx|jsp|cgi)(\b|$|\?)|\/(wp-(admin|login|content|includes)|wordpress|xmlrpc|phpmyadmin|phpmy|pma\b|administrator\/|vendor\/|\.env|\.git\/|\.svn|\.aws|\.ssh|debug\/|actuator|solr\/|jenkins\/|boaform|hnap1|cgi-bin\/|autodiscover|server-status|eval-stdin|think\/app|jsonws\/|geoserver|\.DS_Store))/i;
+app.use((req, res, next) => {
+    if (SCANNER_RE.test(req.path)) return res.status(403).type('text/plain').send('Forbidden');
+    next();
+});
+
 // Restrict cross-origin reads to our own site (same-origin requests still work).
 const ALLOWED_ORIGINS = ['https://vorkhive.com', 'https://www.vorkhive.com'];
 app.use(cors({
@@ -862,23 +873,99 @@ app.post('/api/track', (req, res) => {
     res.status(204).end();
 });
 
+// ── Bot / non-human traffic classification (for clean SEO analytics) ────────
+// Filtered (not blocked) so the admin can still audit them. A visitor is a bot
+// if it hit a scanner path, has no real browser UA, or comes from a known
+// hosting/datacenter range (humans for this SG audience don't browse from cloud).
+const BOT_UA_RE = /(bot|crawl|spider|spyder|scan|slurp|curl|wget|python|java\/|perl|ruby|go-http|libwww|okhttp|axios|node-fetch|headless|phantom|puppeteer|playwright|httpclient|masscan|nmap|nikto|zgrab|semrush|ahrefs|mj12|dotbot|petalbot|bingpreview|facebookexternal|telegrambot|slackbot|discordbot|preview|monitor|uptime|pingdom|censys|shodan|expanse|palo ?alto|netcraft|dataprovider|gptbot|claudebot|claude-web|ccbot|bytespider|amazonbot|applebot|google-?other)/i;
+const BROWSER_RE = /(Chrome|CriOS|Firefox|FxiOS|Safari|Edg|EdgiOS|OPR|Opera|SamsungBrowser|MSIE|Trident|Mobile\/1)/;
+const DC_PREFIXES = [
+    '138.68.', '139.59.', '159.65.', '159.89.', '165.22.', '165.227.', '167.71.', '167.99.', '174.138.', '206.189.', '209.97.', '45.55.', '64.225.', '68.183.', '157.230.', '188.166.', '146.190.', '143.198.', '170.64.', '152.42.', // DigitalOcean
+    '45.76.', '45.77.', '45.32.', '45.63.', '64.176.', '66.42.', '108.61.', '149.28.', '155.138.', '207.148.', '216.128.', '139.180.', // Vultr
+    '34.', '35.', '104.196.', '104.197.', '130.211.', '146.148.', // GCP
+    '3.', '13.', '15.', '18.', '52.', '54.', '99.83.', '13.248.', // AWS
+    '20.', '40.', '13.64.', '13.92.', '104.40.', // Azure
+    '139.162.', '172.104.', '45.33.', '45.79.', '96.126.', '173.255.', '45.56.', // Linode
+    '5.9.', '78.46.', '88.99.', '94.130.', '116.202.', '135.181.', '138.201.', '159.69.', '168.119.', '78.47.', '5.75.', '49.12.', '65.21.', '37.27.', // Hetzner
+    '51.38.', '51.68.', '51.75.', '51.83.', '51.91.', '51.178.', '54.36.', '54.37.', '54.38.', '141.94.', '145.239.', '146.59.', '167.114.', '51.255.', '92.222.', '137.74.', '158.69.', '198.50.', '142.4.', '144.217.', '147.135.', // OVH
+];
+function uaIsBot(ua) {
+    if (!ua || ua.length < 12) return true;
+    if (BOT_UA_RE.test(ua)) return true;
+    if (!BROWSER_RE.test(ua)) return true; // no recognised browser engine → "Other"
+    return false;
+}
+function ipIsDatacenter(ip) {
+    const p = String(ip || '').replace(/^::ffff:/, '');
+    return DC_PREFIXES.some((pre) => p.startsWith(pre));
+}
+function classifyEventBot(e) {
+    if (SCANNER_RE.test(e.path || '')) return { bot: true, reason: 'scanner' };
+    if (uaIsBot(e.ua)) return { bot: true, reason: 'non-browser' };
+    if (ipIsDatacenter(e.ip)) return { bot: true, reason: 'datacenter' };
+    return { bot: false, reason: '' };
+}
+function parseUA(ua) {
+    ua = ua || '';
+    const os = /iPhone|iPad|iPod/.test(ua) ? 'iOS' : /Android/.test(ua) ? 'Android'
+        : /Windows/.test(ua) ? 'Windows' : /Mac OS X|Macintosh/.test(ua) ? 'macOS'
+            : /CrOS/.test(ua) ? 'ChromeOS' : /Linux/.test(ua) ? 'Linux' : 'Other';
+    const browser = /Edg/.test(ua) ? 'Edge' : /OPR|Opera/.test(ua) ? 'Opera' : /SamsungBrowser/.test(ua) ? 'Samsung'
+        : /CriOS/.test(ua) ? 'Chrome' : /Firefox|FxiOS/.test(ua) ? 'Firefox' : /Chrome/.test(ua) ? 'Chrome'
+            : /Safari/.test(ua) ? 'Safari' : 'Other';
+    const device = /iPad|Tablet/.test(ua) ? 'Tablet' : /Mobile|iPhone|iPod/.test(ua) ? 'Mobile'
+        : /Android/.test(ua) ? (/Mobile/.test(ua) ? 'Mobile' : 'Tablet') : 'Desktop';
+    return { os, browser, device };
+}
+function refHost(ref) {
+    if (!ref) return '';
+    try { return new URL(ref).hostname.replace(/^www\./, ''); } catch { return ''; }
+}
+
 // Admin: aggregated analytics + recent event feed.
 app.get('/api/analytics', requireAdmin, (req, res) => {
     const days = Math.min(Math.max(parseInt(req.query.days, 10) || 30, 1), 365);
     const since = Date.now() - days * 86400_000;
-    const events = analyticsEvents.filter((e) => e.ts >= since);
+    const all = analyticsEvents.filter((e) => e.ts >= since);
 
+    // Split human vs bot (scanner paths / non-browser UAs / datacenter IPs).
+    const botReason = {};
+    const botIPs = new Set();
+    const human = [];
+    let botEvents = 0;
+    for (const e of all) {
+        const c = classifyEventBot(e);
+        if (c.bot) { botEvents++; botReason[c.reason] = (botReason[c.reason] || 0) + 1; if (e.ip) botIPs.add(e.ip); continue; }
+        human.push(e);
+    }
+
+    const dayKey = (ts) => new Date(ts).toISOString().slice(0, 10);
     const byType = {};
-    const pageCounts = {};
-    const clickCounts = {};
-    const visitors = new Map(); // ip -> { ip, ua, views, events, lastTs, lastPath }
+    const pageCounts = {}, clickCounts = {}, refCounts = {}, langCounts = {}, entry = {};
+    const country = {}, device = {}, browser = {}, os = {};
+    const dayViews = {}, dayIPs = {};
+    const visitors = new Map();
     const ipSet = new Set();
+    const firstSeen = new Map();   // ip -> {ts, path}  (landing page)
+    const ipDays = new Map();      // ip -> Set(dayKey)  (new vs returning)
 
-    for (const e of events) {
+    for (const e of human) {
         byType[e.type] = (byType[e.type] || 0) + 1;
-        if (e.ip) ipSet.add(e.ip);
-        if (e.type === 'pageview' && e.path) pageCounts[e.path] = (pageCounts[e.path] || 0) + 1;
+        if (e.lang) langCounts[e.lang] = (langCounts[e.lang] || 0) + 1;
         if ((e.type === 'click' || e.type === 'cta') && e.label) clickCounts[e.label] = (clickCounts[e.label] || 0) + 1;
+        const rh = refHost(e.ref);
+        if (rh && !/vorkhive\.com$/i.test(rh)) refCounts[rh] = (refCounts[rh] || 0) + 1;
+        if (e.ip) {
+            ipSet.add(e.ip);
+            let s = ipDays.get(e.ip); if (!s) { s = new Set(); ipDays.set(e.ip, s); } s.add(dayKey(e.ts));
+        }
+        if (e.type === 'pageview') {
+            const dk = dayKey(e.ts);
+            dayViews[dk] = (dayViews[dk] || 0) + 1;
+            let dset = dayIPs[dk]; if (!dset) { dset = new Set(); dayIPs[dk] = dset; } if (e.ip) dset.add(e.ip);
+            if (e.path) pageCounts[e.path] = (pageCounts[e.path] || 0) + 1;
+            if (e.ip) { const f = firstSeen.get(e.ip); if (!f || e.ts < f.ts) firstSeen.set(e.ip, { ts: e.ts, path: e.path }); }
+        }
         if (e.ip) {
             const v = visitors.get(e.ip) || { ip: e.ip, ua: e.ua, views: 0, events: 0, lastTs: 0, lastPath: '' };
             if (e.type === 'pageview') v.views += 1; else v.events += 1;
@@ -886,25 +973,56 @@ app.get('/api/analytics', requireAdmin, (req, res) => {
             visitors.set(e.ip, v);
         }
     }
+
+    // Per-unique-visitor breakdowns (device/browser/OS/country counted once per IP).
+    for (const v of visitors.values()) {
+        const d = parseUA(v.ua);
+        device[d.device] = (device[d.device] || 0) + 1;
+        browser[d.browser] = (browser[d.browser] || 0) + 1;
+        os[d.os] = (os[d.os] || 0) + 1;
+        const g = geoCache[v.ip];
+        const cc = g && !g.failed && g.country ? g.country : (isPrivateIP(v.ip) ? 'Local' : 'Unknown');
+        country[cc] = (country[cc] || 0) + 1;
+    }
+    for (const f of firstSeen.values()) if (f.path) entry[f.path] = (entry[f.path] || 0) + 1;
+
     const sortTop = (obj, n) => Object.entries(obj).sort((a, b) => b[1] - a[1]).slice(0, n).map(([k, count]) => ({ k, count }));
 
-    // Attach the cached geolocation (city/region/country, ISP) to each visitor.
-    const geoFor = (ip) => {
-        const g = geoCache[ip];
-        if (!g || g.failed) return null;
-        const location = [g.city, g.region, g.country].filter(Boolean).join(', ');
-        return { location, city: g.city, region: g.region, country: g.country, countryCode: g.countryCode, postal: g.postal, lat: g.lat, lon: g.lon };
+    // Daily trend (oldest → newest), zero-filled.
+    const trend = [];
+    for (let i = days - 1; i >= 0; i--) { const dk = dayKey(Date.now() - i * 86400_000); trend.push({ day: dk, views: dayViews[dk] || 0, visitors: dayIPs[dk] ? dayIPs[dk].size : 0 }); }
+
+    // Engagement
+    let returning = 0; for (const s of ipDays.values()) if (s.size > 1) returning++;
+    const uniqueHumans = ipSet.size;
+    const engagement = {
+        newVisitors: Math.max(uniqueHumans - returning, 0),
+        returningVisitors: returning,
+        avgViews: uniqueHumans ? Math.round(((byType.pageview || 0) / uniqueHumans) * 10) / 10 : 0,
+        chatRate: uniqueHumans ? Math.round(((byType.chat_open || 0) / uniqueHumans) * 1000) / 10 : 0,
     };
-    const visitorRows = [...visitors.values()]
-        .sort((a, b) => b.lastTs - a.lastTs)
-        .slice(0, 200)
-        .map((v) => ({ ...v, geo: geoFor(v.ip), private: isPrivateIP(v.ip) }));
+
+    const geoFor = (ip) => { const g = geoCache[ip]; if (!g || g.failed) return null; return { location: [g.city, g.region, g.country].filter(Boolean).join(', '), countryCode: g.countryCode, postal: g.postal, lat: g.lat, lon: g.lon }; };
+
+    // Visitor rows include bots (flagged) so the admin can audit who was filtered.
+    const allVisitors = new Map();
+    for (const e of all) {
+        if (!e.ip) continue;
+        const c = classifyEventBot(e);
+        const v = allVisitors.get(e.ip) || { ip: e.ip, ua: e.ua, views: 0, events: 0, lastTs: 0, lastPath: '', bot: false, botReason: '' };
+        if (e.type === 'pageview') v.views += 1; else v.events += 1;
+        if (e.ts >= v.lastTs) { v.lastTs = e.ts; v.lastPath = e.path || v.lastPath; v.ua = e.ua || v.ua; }
+        if (c.bot) { v.bot = true; v.botReason = v.botReason || c.reason; }
+        allVisitors.set(e.ip, v);
+    }
+    const visitorRows = [...allVisitors.values()].sort((a, b) => b.lastTs - a.lastTs).slice(0, 250)
+        .map((v) => ({ ...v, dev: parseUA(v.ua), geo: geoFor(v.ip), private: isPrivateIP(v.ip) }));
 
     res.json({
         days,
         summary: {
             pageviews: byType.pageview || 0,
-            uniqueIPs: ipSet.size,
+            uniqueIPs: uniqueHumans,
             chatOpens: byType.chat_open || 0,
             chatMessages: byType.chat_message || 0,
             whatsapp: byType.whatsapp || 0,
@@ -912,11 +1030,21 @@ app.get('/api/analytics', requireAdmin, (req, res) => {
             email: byType.email || 0,
             clicks: (byType.click || 0) + (byType.cta || 0),
         },
+        totals: { events: all.length, pageviews: all.filter((e) => e.type === 'pageview').length, uniqueIPs: new Set(all.map((e) => e.ip).filter(Boolean)).size },
+        bots: { events: botEvents, visitors: botIPs.size, byReason: botReason },
         byType,
         topPages: sortTop(pageCounts, 15),
+        entryPages: sortTop(entry, 10),
+        topReferrers: sortTop(refCounts, 12),
         topClicks: sortTop(clickCounts, 20),
+        byCountry: sortTop(country, 12),
+        byDevice: sortTop(device, 6),
+        byBrowser: sortTop(browser, 8),
+        byOS: sortTop(os, 8),
+        byLang: sortTop(langCounts, 8),
+        trend,
+        engagement,
         visitors: visitorRows,
-        recent: events.slice(-300).reverse(),
     });
 });
 

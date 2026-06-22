@@ -357,6 +357,8 @@ function Analytics({ token }) {
   const [data, setData] = useState(null);
   const [err, setErr] = useState('');
   const [days, setDays] = useState(30);
+  const [showBots, setShowBots] = useState(false);
+  const [exporting, setExporting] = useState(false);
 
   useEffect(() => {
     let alive = true;
@@ -370,38 +372,108 @@ function Analytics({ token }) {
   const num = (n) => (n || 0).toLocaleString('en-US');
   const when = (ts) => new Date(ts).toLocaleString('en-SG', { dateStyle: 'medium', timeStyle: 'short' });
   const countryFlag = (cc) => (/^[A-Za-z]{2}$/.test(cc) ? cc.toUpperCase().replace(/./g, (c) => String.fromCodePoint(127397 + c.charCodeAt(0))) : '');
-  const shortUA = (ua) => {
-    if (!ua) return '—';
-    const m = ua.match(/(Edg|OPR|Chrome|Firefox|Safari)\/[\d.]+/);
-    const os = /iPhone|iPad/.test(ua) ? 'iOS' : /Android/.test(ua) ? 'Android' : /Mac/.test(ua) ? 'Mac' : /Windows/.test(ua) ? 'Windows' : /Linux/.test(ua) ? 'Linux' : '';
-    return [(m ? m[0].split('/')[0].replace('Edg', 'Edge').replace('OPR', 'Opera') : 'Other'), os].filter(Boolean).join(' · ');
+
+  const card = { background: '#fff', border: '1px solid #e2e8f0', borderRadius: 12, padding: '14px 16px' };
+  const th = { padding: '9px 12px', fontWeight: 600 };
+  const td = { padding: '9px 12px', borderBottom: '1px solid #eef0f4' };
+  const panel = { background: '#fff', borderRadius: 12, border: '1px solid #e2e8f0', overflow: 'hidden', marginTop: 8 };
+  const head = { fontFamily: 'Sora, sans-serif', fontWeight: 700, fontSize: '.95rem', margin: '0 0 8px' };
+  const btn = { padding: '7px 12px', borderRadius: 8, border: '1px solid #cbd5e1', fontSize: '.82rem', background: '#fff', cursor: 'pointer' };
+
+  // ── PDF export (lazy-loaded so it never affects the SSR build) ─────────────
+  const exportPDF = async () => {
+    if (!data) return;
+    setExporting(true);
+    try {
+      const { default: jsPDF } = await import('jspdf');
+      const autoTable = (await import('jspdf-autotable')).default;
+      const doc = new jsPDF({ unit: 'pt', format: 'a4' });
+      const W = doc.internal.pageSize.getWidth();
+      const s = data.summary, b = data.bots, e = data.engagement;
+      doc.setFontSize(16); doc.setTextColor('#0B0A1A'); doc.text('Vorkhive — Visitor & SEO Report', 40, 46);
+      doc.setFontSize(10); doc.setTextColor(100);
+      doc.text(`Last ${data.days} days · generated ${new Date().toLocaleString('en-SG')}`, 40, 62);
+      doc.text(`Real visitors: ${s.uniqueIPs}   Page views: ${s.pageviews}   New: ${e.newVisitors}   Returning: ${e.returningVisitors}   Avg pages/visitor: ${e.avgViews}`, 40, 80, { maxWidth: W - 80 });
+      doc.text(`Bots/scanners filtered out: ${b.visitors} sources, ${b.events} hits`, 40, 95, { maxWidth: W - 80 });
+      let y = 116;
+      const add = (title, h, rows) => {
+        if (!rows || !rows.length) return;
+        if (y > 760) { doc.addPage(); y = 50; }
+        doc.setFontSize(11); doc.setTextColor('#0B0A1A'); doc.text(title, 40, y); y += 6;
+        autoTable(doc, { startY: y, head: [h], body: rows, theme: 'striped', headStyles: { fillColor: [91, 61, 245], fontSize: 8 }, styles: { fontSize: 8, cellPadding: 3, overflow: 'ellipsize' }, margin: { left: 40, right: 40 } });
+        y = doc.lastAutoTable.finalY + 16;
+      };
+      add('Top pages', ['Page', 'Views'], data.topPages.map((p) => [p.k, num(p.count)]));
+      add('Landing pages (first page seen)', ['Entry page', 'Sessions'], data.entryPages.map((p) => [p.k, num(p.count)]));
+      add('Traffic sources (referrers)', ['Referrer', 'Hits'], data.topReferrers.map((p) => [p.k, num(p.count)]));
+      add('Countries', ['Country', 'Visitors'], data.byCountry.map((p) => [p.k, num(p.count)]));
+      add('Devices', ['Device', 'Visitors'], data.byDevice.map((p) => [p.k, num(p.count)]));
+      add('Browsers', ['Browser', 'Visitors'], data.byBrowser.map((p) => [p.k, num(p.count)]));
+      add('Operating systems', ['OS', 'Visitors'], data.byOS.map((p) => [p.k, num(p.count)]));
+      add('Languages', ['Language', 'Events'], data.byLang.map((p) => [p.k, num(p.count)]));
+      add('Most clicked elements', ['Element', 'Clicks'], data.topClicks.map((p) => [p.k, num(p.count)]));
+      add('Real visitors', ['IP', 'Location', 'Last seen', 'Last page', 'Views', 'Device'],
+        data.visitors.filter((v) => !v.bot).map((v) => [v.ip, v.geo ? v.geo.location : (v.private ? 'Local' : '—'), when(v.lastTs), v.lastPath || '—', num(v.views), `${v.dev.browser} · ${v.dev.os}`]));
+      doc.save(`vorkhive-visitors-${data.days}d-${new Date().toISOString().slice(0, 10)}.pdf`);
+    } catch (ex) {
+      alert('PDF export failed: ' + (ex && ex.message ? ex.message : ex));
+    } finally { setExporting(false); }
   };
+
+  // ── small presentational helpers ──────────────────────────────────────────
+  const BarList = ({ rows, fmt, suffix }) => {
+    const max = Math.max(1, ...rows.map((r) => r.count));
+    if (!rows.length) return <div style={{ padding: 14, color: '#94a3b8', fontSize: '.82rem' }}>No data yet.</div>;
+    return rows.map((r) => (
+      <div key={r.k} style={{ padding: '7px 12px', borderBottom: '1px solid #eef0f4' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '.82rem', marginBottom: 4, gap: 8 }}>
+          <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={r.k}>{fmt ? fmt(r.k) : r.k}</span>
+          <strong>{num(r.count)}{suffix || ''}</strong>
+        </div>
+        <div style={{ height: 5, background: '#eef0f4', borderRadius: 3, overflow: 'hidden' }}>
+          <div style={{ height: '100%', width: `${(r.count / max) * 100}%`, background: '#5B3DF5' }} />
+        </div>
+      </div>
+    ));
+  };
+  const Panel = ({ title, hint, children }) => (
+    <div>
+      <h3 style={{ ...head, marginTop: 18 }}>{title}{hint && <span style={{ fontWeight: 400, color: '#94a3b8', fontSize: '.74rem', marginLeft: 6 }}>{hint}</span>}</h3>
+      <div style={panel}>{children}</div>
+    </div>
+  );
 
   if (err) return <div style={{ color: '#dc2626' }}>{err}</div>;
   if (!data) return <div style={{ color: '#64748b' }}>Loading…</div>;
 
-  const s = data.summary;
+  const s = data.summary, b = data.bots, e = data.engagement, t = data.trend || [];
   const cards = [
-    ['Page views', s.pageviews], ['Unique visitors (IPs)', s.uniqueIPs],
-    ['Chat opened', s.chatOpens], ['Chat messages', s.chatMessages],
-    ['WhatsApp clicks', s.whatsapp], ['Call clicks', s.call],
+    ['Page views', s.pageviews], ['Real unique visitors', s.uniqueIPs],
+    ['Returning', e.returningVisitors], ['Avg pages / visitor', e.avgViews],
+    ['Chat opened', s.chatOpens], ['WhatsApp clicks', s.whatsapp],
     ['Email clicks', s.email], ['Element clicks', s.clicks],
   ];
-  const card = { background: '#fff', border: '1px solid #e2e8f0', borderRadius: 12, padding: '14px 16px' };
-  const th = { padding: '9px 12px', fontWeight: 600 };
-  const td = { padding: '9px 12px', borderBottom: '1px solid #eef0f4' };
-  const panel = { background: '#fff', borderRadius: 12, border: '1px solid #e2e8f0', overflow: 'hidden', marginTop: 18 };
-  const head = { fontFamily: 'Sora, sans-serif', fontWeight: 700, fontSize: '.95rem', margin: '0 0 8px' };
+  const trendMax = Math.max(1, ...t.map((r) => r.views));
+  const rows = (data.visitors || []).filter((v) => showBots || !v.bot);
 
   return (
     <div>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 10, margin: '0 0 14px' }}>
-        <p style={{ fontSize: '.85rem', color: '#64748b', margin: 0 }}>
-          First-party visitor analytics — page views (with IP), chat usage, contact clicks and which parts of the site get clicked.
-        </p>
-        <select value={days} onChange={(e) => setDays(Number(e.target.value))} style={{ marginLeft: 'auto', padding: '6px 10px', borderRadius: 8, border: '1px solid #cbd5e1', fontSize: '.85rem' }}>
-          {[1, 7, 30, 90, 365].map((d) => <option key={d} value={d}>Last {d} day{d > 1 ? 's' : ''}</option>)}
-        </select>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10, margin: '0 0 14px', flexWrap: 'wrap' }}>
+        <div>
+          <p style={{ fontSize: '.85rem', color: '#334155', margin: 0, fontWeight: 600 }}>First-party visitor & SEO analytics</p>
+          <p style={{ fontSize: '.76rem', color: '#94a3b8', margin: '2px 0 0' }}>
+            Bots, scanners and datacenter traffic are filtered out — numbers below reflect real people.
+            <strong style={{ color: '#b45309' }}> {num(b.visitors)} bot/scanner source{b.visitors === 1 ? '' : 's'} ({num(b.events)} hits) excluded.</strong>
+          </p>
+        </div>
+        <div style={{ marginLeft: 'auto', display: 'flex', gap: 8 }}>
+          <select value={days} onChange={(ev) => setDays(Number(ev.target.value))} style={{ ...btn, cursor: 'pointer' }}>
+            {[1, 7, 30, 90, 365].map((d) => <option key={d} value={d}>Last {d} day{d > 1 ? 's' : ''}</option>)}
+          </select>
+          <button onClick={exportPDF} disabled={exporting} style={{ ...btn, background: '#5B3DF5', color: '#fff', border: 'none', fontWeight: 600 }}>
+            {exporting ? 'Generating…' : '⬇ Export PDF'}
+          </button>
+        </div>
       </div>
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: 12 }}>
@@ -413,9 +485,41 @@ function Analytics({ token }) {
         ))}
       </div>
 
-      <h3 style={{ ...head, marginTop: 22 }}>Recent visitors</h3>
+      <Panel title="Traffic trend" hint="real page views per day">
+        <div style={{ padding: '14px 14px 8px' }}>
+          <svg viewBox="0 0 100 30" preserveAspectRatio="none" style={{ width: '100%', height: 96, display: 'block' }}>
+            {t.map((r, i) => {
+              const w = 100 / Math.max(t.length, 1);
+              const h = (r.views / trendMax) * 28;
+              return <rect key={r.day} x={i * w + 0.3} y={30 - h} width={Math.max(w - 0.6, 0.4)} height={h} fill="#5B3DF5" rx="0.4"><title>{`${r.day}: ${r.views} views · ${r.visitors} visitors`}</title></rect>;
+            })}
+          </svg>
+          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '.68rem', color: '#94a3b8', marginTop: 4 }}>
+            <span>{t[0] && t[0].day}</span><span>{t[t.length - 1] && t[t.length - 1].day}</span>
+          </div>
+        </div>
+      </Panel>
+
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: 16, marginTop: 4 }}>
+        <Panel title="Top pages" hint="SEO content performance"><BarList rows={data.topPages} /></Panel>
+        <Panel title="Landing pages" hint="where sessions start"><BarList rows={data.entryPages} /></Panel>
+        <Panel title="Traffic sources" hint="external referrers"><BarList rows={data.topReferrers} /></Panel>
+        <Panel title="Countries"><BarList rows={data.byCountry} /></Panel>
+        <Panel title="Devices" hint="mobile-first matters for SEO"><BarList rows={data.byDevice} /></Panel>
+        <Panel title="Browsers"><BarList rows={data.byBrowser} /></Panel>
+        <Panel title="Operating systems"><BarList rows={data.byOS} /></Panel>
+        <Panel title="Languages" hint="i18n interest"><BarList rows={data.byLang} fmt={(k) => ({ en: 'English', zh: '中文', ms: 'Bahasa Melayu', ta: 'தமிழ்', th: 'ไทย' }[k] || k)} /></Panel>
+        <Panel title="Most clicked elements"><BarList rows={data.topClicks} /></Panel>
+      </div>
+
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginTop: 22 }}>
+        <h3 style={{ ...head, margin: 0 }}>Visitors</h3>
+        <label style={{ fontSize: '.78rem', color: '#64748b', display: 'flex', alignItems: 'center', gap: 5, marginLeft: 'auto' }}>
+          <input type="checkbox" checked={showBots} onChange={(ev) => setShowBots(ev.target.checked)} /> show bots / scanners
+        </label>
+      </div>
       <p style={{ fontSize: '.76rem', color: '#94a3b8', margin: '0 0 8px' }}>
-        Location is derived from the IP address (city-level, approximate) — a precise street address can't be obtained from an IP.
+        Location is derived from the IP address (city-level, approximate). Rows flagged <span style={{ color: '#b45309' }}>BOT</span> are excluded from the metrics above.
       </p>
       <div style={panel}>
         <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '.84rem' }}>
@@ -423,16 +527,19 @@ function Analytics({ token }) {
             {['IP address', 'Approx. location', 'Last seen', 'Last page', 'Views', 'Device'].map((h) => <th key={h} style={th}>{h}</th>)}
           </tr></thead>
           <tbody>
-            {data.visitors.length === 0 ? (
+            {rows.length === 0 ? (
               <tr><td colSpan="6" style={{ padding: 26, textAlign: 'center', color: '#94a3b8' }}>No visitors recorded yet.</td></tr>
-            ) : data.visitors.map((v) => {
+            ) : rows.map((v) => {
               const g = v.geo;
               const loc = v.private ? 'Local / private network' : (g && g.location ? g.location : 'Locating…');
               const flag = g && g.countryCode ? countryFlag(g.countryCode) : '';
               const map = g && g.lat != null ? `https://www.google.com/maps?q=${g.lat},${g.lon}` : null;
               return (
-                <tr key={v.ip}>
-                  <td style={{ ...td, fontFamily: 'monospace' }}>{v.ip}</td>
+                <tr key={v.ip} style={v.bot ? { background: '#fffbeb' } : undefined}>
+                  <td style={{ ...td, fontFamily: 'monospace' }}>
+                    {v.ip}
+                    {v.bot && <span title={v.botReason} style={{ marginLeft: 6, fontSize: '.6rem', fontWeight: 700, color: '#b45309', background: '#fef3c7', border: '1px solid #fde68a', borderRadius: 4, padding: '1px 4px' }}>BOT</span>}
+                  </td>
                   <td style={td}>
                     {flag && <span style={{ marginRight: 5 }}>{flag}</span>}
                     {map ? <a href={map} target="_blank" rel="noopener noreferrer" style={{ color: '#5B3DF5' }}>{loc}</a> : <span style={{ color: g || v.private ? 'inherit' : '#94a3b8' }}>{loc}</span>}
@@ -441,41 +548,12 @@ function Analytics({ token }) {
                   <td style={td}>{when(v.lastTs)}</td>
                   <td style={td}>{v.lastPath || '—'}</td>
                   <td style={td}>{num(v.views)}</td>
-                  <td style={{ ...td, color: '#64748b' }}>{shortUA(v.ua)}</td>
+                  <td style={{ ...td, color: '#64748b' }}>{v.dev ? `${v.dev.browser} · ${v.dev.os}` : '—'}</td>
                 </tr>
               );
             })}
           </tbody>
         </table>
-      </div>
-
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 18, marginTop: 4 }}>
-        <div>
-          <h3 style={{ ...head, marginTop: 22 }}>Top pages</h3>
-          <div style={panel}>
-            <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '.84rem' }}>
-              <tbody>
-                {data.topPages.length === 0 ? <tr><td style={{ padding: 18, color: '#94a3b8' }}>No data.</td></tr>
-                  : data.topPages.map((p) => (
-                    <tr key={p.k}><td style={td}>{p.k}</td><td style={{ ...td, textAlign: 'right', fontWeight: 600 }}>{num(p.count)}</td></tr>
-                  ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
-        <div>
-          <h3 style={{ ...head, marginTop: 22 }}>Most clicked parts</h3>
-          <div style={panel}>
-            <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '.84rem' }}>
-              <tbody>
-                {data.topClicks.length === 0 ? <tr><td style={{ padding: 18, color: '#94a3b8' }}>No clicks recorded yet.</td></tr>
-                  : data.topClicks.map((p) => (
-                    <tr key={p.k}><td style={td}>{p.k}</td><td style={{ ...td, textAlign: 'right', fontWeight: 600 }}>{num(p.count)}</td></tr>
-                  ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
       </div>
     </div>
   );
