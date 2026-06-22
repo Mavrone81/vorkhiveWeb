@@ -1037,7 +1037,15 @@ function applyHomeSeo(html, content, lang) {
 
 // Inner pages: translated title/meta/FAQ from content (lang-specific) + hreflang
 // for pages that exist in every language; English ROUTE_SEO for the rest.
-const PAGE_KEY_BY_ROUTE = { '/payroll-singapore': 'payroll', '/cpf-payroll': 'cpf', '/leave-management': 'leave', '/claims': 'claims', '/book': 'book', '/contact': 'contact', '/platform': 'platform', '/features': 'features', '/pricing': 'pricing', '/faq': 'faq', '/customers': 'customers' };
+const PAGE_KEY_BY_ROUTE = { '/payroll-singapore': 'payroll', '/cpf-payroll': 'cpf', '/leave-management': 'leave', '/claims': 'claims', '/hr-software-singapore': 'hrSoftware', '/attendance-software-singapore': 'attendance', '/talenox-alternative': 'vsTalenox', '/swingvy-alternative': 'vsSwingvy', '/guides': 'guidesIndex', '/guides/cpf-contribution-rates-singapore': 'guideCpf', '/guides/mom-leave-entitlements-singapore': 'guideLeave', '/guides/how-to-run-payroll-singapore': 'guidePayroll', '/book': 'book', '/contact': 'contact', '/platform': 'platform', '/features': 'features', '/pricing': 'pricing', '/faq': 'faq', '/customers': 'customers' };
+
+// Routes that are articles/guides — get Article structured data + a breadcrumb
+// under a "Guides" hub. datePublished is fixed so the markup is stable.
+const GUIDE_ROUTES = {
+    '/guides/cpf-contribution-rates-singapore': { name: 'CPF contribution rates in Singapore', datePublished: '2026-06-21' },
+    '/guides/mom-leave-entitlements-singapore': { name: 'MOM leave entitlements in Singapore', datePublished: '2026-06-21' },
+    '/guides/how-to-run-payroll-singapore': { name: 'How to run payroll in Singapore', datePublished: '2026-06-21' },
+};
 function pageHreflang(rest) {
     const tags = ['en', 'zh', 'ms', 'ta', 'th']
         .map((l) => `<link rel="alternate" hreflang="${I18N[l].hreflang}" href="${l === 'en' ? 'https://vorkhive.com' : `https://vorkhive.com/${l}`}${rest}" />`)
@@ -1059,9 +1067,31 @@ function applyInnerSeo(html, rest, content, lang) {
         if (!s) return html;
         title = s.title; description = s.description; url = s.canonical; faqPairs = s.faq || null;
     }
+    const ld = (obj) => `<script type="application/ld+json">${JSON.stringify(obj).replace(/</g, '\\u003c')}</script>`;
     const faqJson = (faqPairs && faqPairs.length)
-        ? JSON.stringify({ '@context': 'https://schema.org', '@type': 'FAQPage', mainEntity: faqPairs.map(([q, a]) => ({ '@type': 'Question', name: q, acceptedAnswer: { '@type': 'Answer', text: a } })) }).replace(/</g, '\\u003c')
+        ? ld({ '@context': 'https://schema.org', '@type': 'FAQPage', mainEntity: faqPairs.map(([q, a]) => ({ '@type': 'Question', name: q, acceptedAnswer: { '@type': 'Answer', text: a } })) })
         : '';
+
+    // BreadcrumbList for every inner page (guides nest under a Guides hub).
+    const guide = GUIDE_ROUTES[rest];
+    const crumbs = [{ name: 'Home', item: 'https://vorkhive.com/' }];
+    if (rest.startsWith('/guides/')) crumbs.push({ name: 'Guides', item: 'https://vorkhive.com/guides' });
+    crumbs.push({ name: cpage?.h1 || title, item: 'https://vorkhive.com' + rest });
+    const breadcrumbJson = ld({
+        '@context': 'https://schema.org', '@type': 'BreadcrumbList',
+        itemListElement: crumbs.map((c, i) => ({ '@type': 'ListItem', position: i + 1, name: c.name, item: c.item })),
+    });
+
+    // Article schema for guide pages (helps eligibility for article rich results).
+    const articleJson = guide ? ld({
+        '@context': 'https://schema.org', '@type': 'Article',
+        headline: cpage?.h1 || guide.name, description,
+        datePublished: guide.datePublished, dateModified: guide.datePublished,
+        author: { '@type': 'Organization', name: 'Vorkhive' },
+        publisher: { '@type': 'Organization', name: 'Vorkhive', logo: { '@type': 'ImageObject', url: 'https://vorkhive.com/logo.png' } },
+        mainEntityOfPage: { '@type': 'WebPage', '@id': 'https://vorkhive.com' + rest },
+    }) : '';
+
     return html
         .replace(/<title>[^<]*<\/title>/, `<title>${escHtml(title)}</title>`)
         .replace(/(<meta name="description" content=")[^"]*(")/, `$1${escAttr(description)}$2`)
@@ -1069,10 +1099,11 @@ function applyInnerSeo(html, rest, content, lang) {
         .replace(/(<meta property="og:title" content=")[^"]*(")/, `$1${escAttr(title)}$2`)
         .replace(/(<meta property="og:description" content=")[^"]*(")/, `$1${escAttr(description)}$2`)
         .replace(/(<meta property="og:url" content=")[^"]*(")/, `$1${url}$2`)
+        .replace(/(<meta property="og:type" content=")[^"]*(")/, `$1${guide ? 'article' : 'website'}$2`)
         .replace(/(<meta name="twitter:title" content=")[^"]*(")/, `$1${escAttr(title)}$2`)
         .replace(/(<meta name="twitter:description" content=")[^"]*(")/, `$1${escAttr(description)}$2`)
         .replace(/\s*<link rel="alternate" hreflang="[^"]*" href="[^"]*"\s*\/>/g, '')
-        .replace('</head>', `${hreflang}${faqJson ? `<script type="application/ld+json">${faqJson}</script>` : ''}</head>`);
+        .replace('</head>', `${hreflang}${faqJson}${breadcrumbJson}${articleJson}</head>`);
 }
 
 app.get(/(.*)/, (req, res) => {

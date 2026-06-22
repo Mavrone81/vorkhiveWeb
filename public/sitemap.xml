@@ -71,6 +71,46 @@
     <priority>0.9</priority>
   </url>
   <url>
+    <loc>https://vorkhive.com/hr-software-singapore</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.9</priority>
+  </url>
+  <url>
+    <loc>https://vorkhive.com/attendance-software-singapore</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.9</priority>
+  </url>
+  <url>
+    <loc>https://vorkhive.com/talenox-alternative</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://vorkhive.com/swingvy-alternative</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://vorkhive.com/guides</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://vorkhive.com/guides/cpf-contribution-rates-singapore</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://vorkhive.com/guides/mom-leave-entitlements-singapore</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://vorkhive.com/guides/how-to-run-payroll-singapore</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
     <loc>https://vorkhive.com/book</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>

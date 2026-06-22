@@ -13,6 +13,7 @@ import BookDemo from './pages/BookDemo.jsx';
 import Terms from './pages/Terms.jsx';
 import Privacy from './pages/Privacy.jsx';
 import { PlatformPage, FeaturesPage, PricingPage, FaqPage, CustomersPage } from './pages/SectionPages.jsx';
+import { HrSoftwarePage, AttendancePage, TalenoxAlternativePage, SwingvyAlternativePage, GuidesIndexPage, GuideCpfPage, GuideLeavePage, GuidePayrollPage } from './pages/SeoPages.jsx';
 import { ContentProvider } from './content/ContentContext.jsx';
 
 // Shared app tree used by both the client (hydration) and the
@@ -33,6 +34,14 @@ export default function AppRoutes({ content }) {
           <Route path="/cpf-payroll" element={<CpfPayroll />} />
           <Route path="/leave-management" element={<LeaveManagement />} />
           <Route path="/claims" element={<ClaimsManagement />} />
+          <Route path="/hr-software-singapore" element={<HrSoftwarePage />} />
+          <Route path="/attendance-software-singapore" element={<AttendancePage />} />
+          <Route path="/talenox-alternative" element={<TalenoxAlternativePage />} />
+          <Route path="/swingvy-alternative" element={<SwingvyAlternativePage />} />
+          <Route path="/guides" element={<GuidesIndexPage />} />
+          <Route path="/guides/cpf-contribution-rates-singapore" element={<GuideCpfPage />} />
+          <Route path="/guides/mom-leave-entitlements-singapore" element={<GuideLeavePage />} />
+          <Route path="/guides/how-to-run-payroll-singapore" element={<GuidePayrollPage />} />
           <Route path="/book" element={<BookDemo />} />
           <Route path="/terms" element={<Terms />} />
           <Route path="/privacy" element={<Privacy />} />
