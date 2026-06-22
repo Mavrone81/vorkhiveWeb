@@ -28,4 +28,8 @@ services:
       - ./data/usage.json:/app/usage.json
       - ./data/bookings.json:/app/bookings.json
       - ./data/conversations.json:/app/conversations.json
+      # Visitor analytics + geo cache — persist across rebuilds (previously lost
+      # on every deploy because they weren't bind-mounted).
+      - ./data/analytics.json:/app/analytics.json
+      - ./data/geo.json:/app/geo.json
       - ./data/uploads:/app/uploads
