@@ -9,6 +9,8 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import { Xendit } from 'xendit-node';
 import nodemailer from 'nodemailer';
+import { getCard } from './src/content/cards.js';
+import { toVCard, vcardFilename } from './src/lib/vcard.js';
 
 // Load .env into process.env if present (no-op when real env vars are set, e.g. in prod)
 try {
@@ -1234,6 +1236,52 @@ function applyInnerSeo(html, rest, content, lang) {
         .replace('</head>', `${hreflang}${faqJson}${breadcrumbJson}${articleJson}</head>`);
 }
 
+// ---------------------------------------------------------------------------
+// Digital name cards  (/card/<slug>  and  /card/<slug>.vcf)
+// ---------------------------------------------------------------------------
+
+const CARD_ROUTE = /^\/card\/([A-Za-z0-9-]+)$/;
+
+// The .vcf download. A RegExp route (like the SSR catch-all below) rather than
+// '/card/:slug.vcf', because path-to-regexp treats the dot as part of the
+// parameter name in Express 5 and the route would never match.
+// MUST stay above the catch-all, or the SSR handler swallows it.
+app.get(/^\/card\/([A-Za-z0-9-]+)\.vcf$/, (req, res) => {
+    const card = getCard(req.params[0]);
+    if (!card) return res.status(404).type('text/plain').send('Card not found');
+
+    recordEvent(req, 'click', { label: `namecard: download ${card.slug}.vcf` });
+
+    res.set('Content-Type', 'text/vcard; charset=utf-8');
+    res.set('Content-Disposition', `attachment; filename="${vcardFilename(card)}"`);
+    // Personal contact details: let a phone re-fetch rather than serve a stale
+    // number from an intermediary cache if we ever correct one.
+    res.set('Cache-Control', 'no-cache, must-revalidate');
+    res.send(toVCard(card));
+});
+
+// Per-card <head>. Deliberately noindex: the cards are meant to be handed out
+// by link and QR, and keeping them out of search keeps two personal mobile
+// numbers away from scrapers. They stay fully shareable either way.
+function applyCardSeo(html, slug) {
+    const card = getCard(slug);
+    if (!card) return html;
+    const title = `${card.fullName} — ${card.title}, Vorkhive`;
+    const description = `Digital name card for ${card.fullName}, ${card.title} at Vorkhive. Call, email or WhatsApp directly, or save the contact to your phone.`;
+    const url = `https://vorkhive.com/card/${card.slug}`;
+    return html
+        .replace(/(<title>)[^<]*(<\/title>)/, `$1${escHtml(title)}$2`)
+        .replace(/(<meta name="description" content=")[^"]*(")/, `$1${escAttr(description)}$2`)
+        .replace(/(<meta name="robots" content=")[^"]*(")/, '$1noindex, nofollow$2')
+        .replace(/(<link rel="canonical" href=")[^"]*(")/, `$1${url}$2`)
+        .replace(/(<meta property="og:title" content=")[^"]*(")/, `$1${escAttr(title)}$2`)
+        .replace(/(<meta property="og:description" content=")[^"]*(")/, `$1${escAttr(description)}$2`)
+        .replace(/(<meta property="og:url" content=")[^"]*(")/, `$1${url}$2`)
+        .replace(/(<meta name="twitter:title" content=")[^"]*(")/, `$1${escAttr(title)}$2`)
+        .replace(/(<meta name="twitter:description" content=")[^"]*(")/, `$1${escAttr(description)}$2`)
+        .replace(/\s*<link rel="alternate" hreflang="[^"]*" href="[^"]*"\s*\/>/g, '');
+}
+
 app.get(/(.*)/, (req, res) => {
     try {
         const { lang, rest } = parseLang(req.path);
@@ -1248,7 +1296,9 @@ app.get(/(.*)/, (req, res) => {
             .replace('<!--app-html-->', appHtml)
             .replace('<!--content-state-->', stateScript)
             .replace(/<html lang="[^"]*"/, `<html lang="${(I18N[lang] || I18N.en).html}"`);
-        html = (rest === '/' || rest === '') ? applyHomeSeo(html, content, lang) : applyInnerSeo(html, rest, content, lang);
+        const cardSlug = CARD_ROUTE.exec(rest);
+        if (cardSlug) html = applyCardSeo(html, cardSlug[1]);
+        else html = (rest === '/' || rest === '') ? applyHomeSeo(html, content, lang) : applyInnerSeo(html, rest, content, lang);
         // Never let the HTML (which references the hashed JS/CSS bundles) go stale,
         // so browsers always load the current build.
         res.set('Cache-Control', 'no-cache, must-revalidate');

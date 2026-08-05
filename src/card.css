@@ -1,0 +1,282 @@
+/* Vorkhive digital name card.
+   Scoped under .vc-root so it can never collide with redesign.css (.vh-root)
+   or the legacy index.css used by /contact, /admin, /success.
+   Palette and type are lifted from the homepage: navy primary, gold accent,
+   cream surface, Playfair Display / Sora / Inter (already loaded in index.html). */
+.vc-root {
+  --navy: #0E2A4C;
+  --navy-deep: #09203B;
+  --gold: #B6893F;
+  --gold-deep: #946C2C;
+  --gold-soft: #F2E7CE;
+  --ink: #11243F;
+  --slate: #4C566B;
+  --line: #E6DDC9;
+  --bg: #F4EDDF;
+  --bg-tint: #FBF6EC;
+  --serif: 'Playfair Display', Georgia, 'Times New Roman', serif;
+  --shadow: 0 30px 70px -30px rgba(14, 42, 76, .38);
+}
+
+.vc-root * { margin: 0; padding: 0; box-sizing: border-box; }
+
+.vc-root {
+  font-family: 'Inter', system-ui, sans-serif;
+  color: var(--ink);
+  background: var(--bg);
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 40px 20px 56px;
+  position: relative;
+  overflow-x: clip;
+}
+
+/* Soft brand glows, same treatment as the homepage hero. */
+.vc-root::before,
+.vc-root::after {
+  content: "";
+  position: absolute;
+  border-radius: 50%;
+  pointer-events: none;
+  z-index: 0;
+}
+.vc-root::before {
+  top: -160px; right: -140px; width: 520px; height: 520px;
+  background: radial-gradient(circle, rgba(182, 137, 63, .18), transparent 62%);
+}
+.vc-root::after {
+  bottom: -220px; left: -170px; width: 560px; height: 560px;
+  background: radial-gradient(circle, rgba(14, 42, 76, .10), transparent 62%);
+}
+
+.vc-card {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  max-width: 420px;
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 26px;
+  box-shadow: var(--shadow);
+  overflow: hidden;
+}
+
+/* ---- Navy masthead ---- */
+.vc-head {
+  background: linear-gradient(150deg, var(--navy) 0%, var(--navy-deep) 100%);
+  padding: 26px 28px 22px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  color: #fff;
+}
+.vc-head .vc-mark { width: 34px; height: 34px; flex-shrink: 0; color: #fff; }
+.vc-head .vc-mark svg { width: 34px; height: 34px; display: block; }
+.vc-brand { font-family: 'Sora', sans-serif; font-weight: 800; font-size: 1.16rem; letter-spacing: .01em; line-height: 1.1; }
+.vc-brand small {
+  display: block;
+  font-size: .53rem;
+  letter-spacing: .18em;
+  color: var(--gold);
+  font-weight: 700;
+  margin-top: 3px;
+}
+
+/* ---- Identity ---- */
+.vc-identity { padding: 30px 28px 24px; text-align: center; }
+
+.vc-monogram {
+  width: 92px; height: 92px;
+  margin: 0 auto 18px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: var(--bg-tint);
+  border: 2px solid var(--gold);
+  box-shadow: 0 10px 26px -14px rgba(14, 42, 76, .5);
+  font-family: var(--serif);
+  font-weight: 700;
+  font-size: 2.1rem;
+  color: var(--navy);
+  letter-spacing: .02em;
+}
+
+.vc-name {
+  font-family: var(--serif);
+  font-weight: 700;
+  font-size: clamp(1.8rem, 6vw, 2.15rem);
+  line-height: 1.12;
+  color: var(--ink);
+  margin-bottom: 12px;
+}
+
+.vc-title {
+  display: inline-flex;
+  align-items: center;
+  font-family: 'Sora', sans-serif;
+  font-weight: 700;
+  font-size: .68rem;
+  letter-spacing: .16em;
+  text-transform: uppercase;
+  color: var(--gold-deep);
+  background: var(--gold-soft);
+  border: 1px solid rgba(182, 137, 63, .28);
+  padding: 7px 15px;
+  border-radius: 100px;
+}
+
+.vc-tagline {
+  margin-top: 14px;
+  font-size: .87rem;
+  color: var(--slate);
+}
+
+/* ---- Contact rows ---- */
+.vc-rows { padding: 4px 16px 8px; }
+
+.vc-row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 13px 12px;
+  border-radius: 14px;
+  color: inherit;
+  text-decoration: none;
+  transition: background .15s ease, transform .15s ease;
+}
+.vc-row + .vc-row { border-top: 1px solid var(--bg-tint); }
+.vc-row:hover { background: var(--bg-tint); }
+.vc-row:active { transform: scale(.99); }
+
+.vc-ico {
+  width: 38px; height: 38px;
+  flex-shrink: 0;
+  border-radius: 11px;
+  display: grid;
+  place-items: center;
+  background: var(--bg);
+  color: var(--navy);
+  border: 1px solid var(--line);
+}
+.vc-ico svg { width: 18px; height: 18px; display: block; }
+.vc-ico.is-wa { background: rgba(37, 211, 102, .12); border-color: rgba(37, 211, 102, .35); color: #1EA855; }
+
+.vc-row .vc-text { min-width: 0; }
+.vc-row .vc-label {
+  display: block;
+  font-family: 'Sora', sans-serif;
+  font-size: .58rem;
+  font-weight: 700;
+  letter-spacing: .15em;
+  text-transform: uppercase;
+  color: var(--gold);
+  margin-bottom: 1px;
+}
+.vc-row .vc-value {
+  display: block;
+  font-size: .95rem;
+  font-weight: 500;
+  color: var(--ink);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* ---- Actions ---- */
+.vc-actions { padding: 14px 24px 4px; display: flex; flex-direction: column; gap: 10px; }
+
+.vc-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+  font-family: 'Sora', sans-serif;
+  font-weight: 700;
+  font-size: .97rem;
+  padding: 15px 22px;
+  border-radius: 14px;
+  border: none;
+  cursor: pointer;
+  text-decoration: none;
+  transition: transform .15s ease, box-shadow .15s ease, background .15s ease;
+}
+.vc-btn svg { width: 18px; height: 18px; }
+
+.vc-btn-primary {
+  background: var(--navy);
+  color: #fff;
+  box-shadow: 0 14px 30px -12px rgba(14, 42, 76, .55);
+}
+.vc-btn-primary:hover { background: #143052; transform: translateY(-2px); box-shadow: 0 18px 40px -12px rgba(14, 42, 76, .62); }
+
+.vc-btn-ghost {
+  background: #fff;
+  color: var(--ink);
+  border: 1.5px solid var(--line);
+}
+.vc-btn-ghost:hover { border-color: var(--gold); color: var(--gold-deep); transform: translateY(-2px); }
+
+/* ---- QR ---- */
+.vc-qr {
+  margin: 20px 24px 8px;
+  padding: 18px;
+  background: var(--bg-tint);
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  text-align: center;
+}
+.vc-qr img {
+  width: 148px; height: 148px;
+  display: block;
+  margin: 0 auto 10px;
+  background: #fff;
+  border-radius: 10px;
+  padding: 8px;
+  border: 1px solid var(--line);
+}
+.vc-qr .vc-qr-cap {
+  font-family: 'Sora', sans-serif;
+  font-size: .58rem;
+  font-weight: 700;
+  letter-spacing: .15em;
+  text-transform: uppercase;
+  color: var(--slate);
+}
+
+/* ---- Footer ---- */
+.vc-foot {
+  padding: 16px 24px 24px;
+  text-align: center;
+  font-size: .8rem;
+  color: var(--slate);
+}
+.vc-foot a { color: var(--gold-deep); font-weight: 600; text-decoration: none; }
+.vc-foot a:hover { text-decoration: underline; }
+
+/* ---- Unknown slug ---- */
+.vc-missing {
+  position: relative;
+  z-index: 1;
+  max-width: 420px;
+  text-align: center;
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 26px;
+  box-shadow: var(--shadow);
+  padding: 44px 30px;
+}
+.vc-missing h1 { font-family: var(--serif); font-size: 1.6rem; margin-bottom: 10px; }
+.vc-missing p { color: var(--slate); margin-bottom: 22px; }
+
+@media (max-width: 380px) {
+  .vc-root { padding: 24px 14px 40px; }
+  .vc-identity { padding: 26px 20px 20px; }
+  .vc-rows { padding: 4px 10px 8px; }
+  .vc-actions { padding: 12px 18px 4px; }
+  .vc-qr { margin: 18px 18px 8px; }
+}

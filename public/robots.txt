@@ -3,5 +3,6 @@ Allow: /
 Disallow: /admin
 Disallow: /api/
 Disallow: /success
+Disallow: /card/
 
 Sitemap: https://vorkhive.com/sitemap.xml

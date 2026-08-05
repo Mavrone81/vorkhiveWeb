@@ -53,11 +53,16 @@ export default function Layout({ children }) {
     return () => document.removeEventListener('click', onClick, { capture: true });
   }, []);
 
+  // The digital name cards are handed to someone face to face, so the sales
+  // chat bubble and floating contact buttons would sit on top of the card and
+  // compete with its own call/email/WhatsApp actions. Keep those pages clean.
+  const isNameCard = location.pathname.startsWith('/card/');
+
   return (
     <>
       {children}
-      <FloatingContacts />
-      <ChatWidget />
+      {!isNameCard && <FloatingContacts />}
+      {!isNameCard && <ChatWidget />}
     </>
   );
 }

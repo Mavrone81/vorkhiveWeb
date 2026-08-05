@@ -12,6 +12,7 @@ import ClaimsManagement from './pages/ClaimsManagement.jsx';
 import BookDemo from './pages/BookDemo.jsx';
 import Terms from './pages/Terms.jsx';
 import Privacy from './pages/Privacy.jsx';
+import NameCard from './pages/NameCard.jsx';
 import { PlatformPage, FeaturesPage, PricingPage, FaqPage, CustomersPage } from './pages/SectionPages.jsx';
 import { HrSoftwarePage, AttendancePage, TalenoxAlternativePage, SwingvyAlternativePage, GuidesIndexPage, GuideCpfPage, GuideLeavePage, GuidePayrollPage } from './pages/SeoPages.jsx';
 import { ContentProvider } from './content/ContentContext.jsx';
@@ -45,6 +46,7 @@ export default function AppRoutes({ content }) {
           <Route path="/book" element={<BookDemo />} />
           <Route path="/terms" element={<Terms />} />
           <Route path="/privacy" element={<Privacy />} />
+          <Route path="/card/:slug" element={<NameCard />} />
           <Route path="/contact" element={<Contact />} />
           <Route path="/admin" element={<Admin />} />
           <Route path="/success" element={<Success />} />
