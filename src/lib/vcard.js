@@ -7,6 +7,8 @@
 // Pure functions, no I/O, so this is unit-testable (see test/vcard.test.mjs)
 // and safe to import from both the Express server and the browser bundle.
 
+import { LOGO_PHOTO_PNG_B64 } from './logo-badge.js';
+
 const CRLF = '\r\n';
 
 // Escape the vCard delimiters. Order matters: backslashes first, or the
@@ -17,6 +19,21 @@ function esc(value) {
     .replace(/\r\n|\r|\n/g, '\\n')
     .replace(/;/g, '\\;')
     .replace(/,/g, '\\,');
+}
+
+// RFC 2426 content-line folding: no line may exceed 75 octets; continuation
+// lines begin with a single space. Only the base64 PHOTO needs this — every
+// other field here is short and pure of multi-byte surprises. Because base64
+// is ASCII, string length equals octet length, so folding on characters is safe.
+function fold(line) {
+  if (line.length <= 75) return line;
+  let out = line.slice(0, 75);
+  let rest = line.slice(75);
+  while (rest.length) {
+    out += CRLF + ' ' + rest.slice(0, 74);
+    rest = rest.slice(74);
+  }
+  return out;
 }
 
 export function toVCard(card) {
@@ -34,6 +51,11 @@ export function toVCard(card) {
   if (card.email) lines.push(`EMAIL;TYPE=INTERNET,WORK:${esc(card.email)}`);
   if (card.website) lines.push(`URL:${esc(card.website)}`);
   if (card.note) lines.push(`NOTE:${esc(card.note)}`);
+
+  // The Vorkhive hexagon mark as the contact photo. vCard 3.0 inline binary:
+  // ENCODING=b, folded to 75-octet lines. Shows as the contact's picture on
+  // iOS/Android/Outlook.
+  lines.push(fold(`PHOTO;ENCODING=b;TYPE=PNG:${LOGO_PHOTO_PNG_B64}`));
 
   // WhatsApp is intentionally absent: X-SOCIALPROFILE shows up as a junk row in
   // Outlook, and since the mobile above IS the WhatsApp number, saving the

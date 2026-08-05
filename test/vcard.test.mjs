@@ -114,6 +114,26 @@ test('leaves out fields that have no value rather than emitting empty ones', () 
   assert.match(vcf, /\r\nN:;Solo;;;\r\n/);
 });
 
+test('embeds the Vorkhive logo as a folded base64 PHOTO', () => {
+  const vcf = toVCard(eugene);
+  // The property is present as vCard 3.0 inline binary.
+  assert.match(vcf, /\r\nPHOTO;ENCODING=b;TYPE=PNG:/);
+
+  // No content line may exceed 75 octets (folding). Continuation lines begin
+  // with a space; every line is plain ASCII here so length === octets.
+  for (const line of vcf.split('\r\n')) {
+    assert.ok(line.length <= 75, `line over 75: ${line.length}`);
+  }
+
+  // Unfolding (drop each CRLF+space) must reconstruct valid base64 for the PNG.
+  const unfolded = vcf.replace(/\r\n /g, '');
+  const m = unfolded.match(/\r\nPHOTO;ENCODING=b;TYPE=PNG:([A-Za-z0-9+/=]+)\r\n/);
+  assert.ok(m, 'PHOTO payload not recoverable after unfolding');
+  const bytes = Buffer.from(m[1], 'base64');
+  // PNG magic number, so a phone gets a real image, not garbage.
+  assert.deepEqual([...bytes.subarray(0, 4)], [0x89, 0x50, 0x4e, 0x47]);
+});
+
 test('download filename is safe and identifies the person', () => {
   assert.equal(vcardFilename(eugene), 'Eugene-Sia-Vorkhive.vcf');
   assert.equal(vcardFilename(samuel), 'Samuel-Fu-Vorkhive.vcf');
