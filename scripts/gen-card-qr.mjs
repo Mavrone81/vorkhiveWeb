@@ -1,47 +1,36 @@
 // Regenerate the name-card QR codes into public/qr-<slug>.svg.
 //
-//   npx --yes qrcode@1 --version >/dev/null && node scripts/gen-card-qr.mjs
+//   npm install --no-save qrcode@1 && node scripts/gen-card-qr.mjs
+//   # then restore the lockfile: git checkout -- package-lock.json package.json
 //
 // The QR encodes the CARD PAGE URL, not the raw vCard: scanning opens the card
 // so the person can see who it is before saving, and a number can be corrected
 // later without reprinting anything that carries the code.
 //
+// Each code carries the Vorkhive hexagon mark in the centre. To stay scannable
+// with the middle occluded we generate at error-correction level H (recovers
+// ~30% of the code) and keep the knockout badge conservatively small. After any
+// change to qr-lib.mjs, decode-verify the output before committing: rasterise
+// the finished SVG and read it back at the card's display size (148px) with a
+// QR reader — a logo that grows too large stops scanning, and only decoding the
+// composited image catches that.
+//
 // Output is committed to the repo, so the production build and runtime need no
-// QR dependency at all — `qrcode` is pulled on demand via npx, never installed
-// into package.json.
+// QR dependency at all — `qrcode` is only needed to regenerate.
 import { writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { createRequire } from 'node:module';
-import { execSync } from 'node:child_process';
 
 import { CARDS } from '../src/content/cards.js';
+import { buildCardQrSvg } from './qr-lib.mjs';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const PUBLIC_DIR = join(__dirname, '..', 'public');
 const BASE = 'https://vorkhive.com';
 
-// Resolve `qrcode` from wherever npx cached it, without adding a repo dependency.
-function loadQrcode() {
-  const require = createRequire(import.meta.url);
-  try {
-    return require('qrcode');
-  } catch {
-    const root = execSync('npm root -g', { encoding: 'utf8' }).trim();
-    return createRequire(join(root, 'noop.js'))('qrcode');
-  }
-}
-
-const QRCode = loadQrcode();
-
 for (const card of CARDS) {
   const url = `${BASE}/card/${card.slug}`;
-  const svg = await QRCode.toString(url, {
-    type: 'svg',
-    errorCorrectionLevel: 'M',
-    margin: 1,
-    color: { dark: '#0E2A4CFF', light: '#00000000' }, // navy on transparent
-  });
+  const svg = await buildCardQrSvg(url);
   const out = join(PUBLIC_DIR, `qr-${card.slug}.svg`);
   writeFileSync(out, svg);
   console.log(`wrote ${out}  ->  ${url}`);
