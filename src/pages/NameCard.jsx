@@ -76,15 +76,20 @@ export default function NameCard() {
     <div className="vc-root">
       <div className="vc-card">
         <div className="vc-head">
-          <span className="vc-mark" aria-hidden="true"><HexMark /></span>
           <span className="vc-brand">
-            {COMPANY.name}
-            <small>{COMPANY.strapline}</small>
+            <span className="vc-mark" aria-hidden="true"><HexMark /></span>
+            <span className="vc-wordmark">
+              {COMPANY.name}
+              <small>{COMPANY.strapline}</small>
+            </span>
           </span>
         </div>
 
         <div className="vc-identity">
-          <div className="vc-monogram" aria-hidden="true">{card.initials}</div>
+          <div className="vc-avatar" aria-hidden="true">
+            <span className="ring" />
+            <span className="face"><span className="initials">{card.initials}</span></span>
+          </div>
           <h1 className="vc-name">{card.fullName}</h1>
           <div className="vc-title">{card.title}</div>
           <p className="vc-tagline">{COMPANY.tagline}</p>

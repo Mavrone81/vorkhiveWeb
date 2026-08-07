@@ -1,185 +1,209 @@
-/* Vorkhive digital name card.
-   Scoped under .vc-root so it can never collide with redesign.css (.vh-root)
-   or the legacy index.css used by /contact, /admin, /success.
-   Palette and type are lifted from the homepage: navy primary, gold accent,
-   cream surface, Playfair Display / Sora / Inter (already loaded in index.html). */
+/* Vorkhive digital name card — "The hive".
+   Scoped under .vc-root so it never collides with redesign.css (.vh-root) or the
+   legacy index.css (/contact, /admin, /success). Palette and type are brand-
+   locked to vorkhive.com (cream/navy/gold, Playfair/Sora/Inter); the craft lives
+   in the hexagon avatar, the honeycomb masthead, and the hairline detailing. */
 .vc-root {
   --navy: #0E2A4C;
-  --navy-deep: #09203B;
+  --navy-deep: #071B33;
   --gold: #B6893F;
   --gold-deep: #946C2C;
   --gold-soft: #F2E7CE;
   --ink: #11243F;
-  --slate: #4C566B;
+  --slate: #52607A;
   --line: #E6DDC9;
   --bg: #F4EDDF;
   --bg-tint: #FBF6EC;
   --serif: 'Playfair Display', Georgia, 'Times New Roman', serif;
-  --shadow: 0 30px 70px -30px rgba(14, 42, 76, .38);
+  --sans: 'Sora', system-ui, sans-serif;
+  --body: 'Inter', system-ui, sans-serif;
+  --shadow: 0 40px 90px -44px rgba(7, 27, 51, .55);
+  /* flat-top hexagon, matching the Vorkhive logo mark */
+  --hex: polygon(25% 1%, 75% 1%, 100% 50%, 75% 99%, 25% 99%, 0% 50%);
 }
 
 .vc-root * { margin: 0; padding: 0; box-sizing: border-box; }
 
 .vc-root {
-  font-family: 'Inter', system-ui, sans-serif;
+  font-family: var(--body);
   color: var(--ink);
-  background: var(--bg);
+  background:
+    radial-gradient(circle at 82% -8%, rgba(182, 137, 63, .16), transparent 46%),
+    radial-gradient(circle at 12% 108%, rgba(14, 42, 76, .10), transparent 44%),
+    var(--bg);
   line-height: 1.6;
   -webkit-font-smoothing: antialiased;
   min-height: 100vh;
   display: flex;
-  flex-direction: column;
   align-items: center;
   justify-content: center;
-  padding: 40px 20px 56px;
-  position: relative;
-  overflow-x: clip;
-}
-
-/* Soft brand glows, same treatment as the homepage hero. */
-.vc-root::before,
-.vc-root::after {
-  content: "";
-  position: absolute;
-  border-radius: 50%;
-  pointer-events: none;
-  z-index: 0;
-}
-.vc-root::before {
-  top: -160px; right: -140px; width: 520px; height: 520px;
-  background: radial-gradient(circle, rgba(182, 137, 63, .18), transparent 62%);
-}
-.vc-root::after {
-  bottom: -220px; left: -170px; width: 560px; height: 560px;
-  background: radial-gradient(circle, rgba(14, 42, 76, .10), transparent 62%);
+  padding: 44px 20px 60px;
 }
 
 .vc-card {
   position: relative;
-  z-index: 1;
   width: 100%;
-  max-width: 420px;
+  max-width: 428px;
   background: #fff;
   border: 1px solid var(--line);
-  border-radius: 26px;
+  border-radius: 28px;
   box-shadow: var(--shadow);
   overflow: hidden;
 }
 
-/* ---- Navy masthead ---- */
+/* ---------- Masthead: navy + honeycomb ---------- */
 .vc-head {
-  background: linear-gradient(150deg, var(--navy) 0%, var(--navy-deep) 100%);
-  padding: 26px 28px 22px;
+  position: relative;
+  height: 132px;
+  background:
+    url("data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjgiIGhlaWdodD0iNDkiIHZpZXdCb3g9IjAgMCAyOCA0OSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZyBmaWxsPSIjZmZmZmZmIiBmaWxsLW9wYWNpdHk9IjAuMDUiIGZpbGwtcnVsZT0iZXZlbm9kZCI+PHBhdGggZD0iTTEzLjk5IDkuMjVsMTMgNy41djE1bC0xMyA3LjVMMSAzMS43NXYtMTVsMTIuOTktNy41ek0zIDE3Ljl2MTIuN2wxMC45OSA2LjM0IDExLTYuMzVWMTcuOWwtMTEtNi4zNEwzIDE3Ljl6TTAgMTVsMTIuOTgtNy41VjBoLTJ2Ni4zNUwwIDEyLjY5djIuM3ptMCAxOC41TDEyLjk4IDQxdjhoLTJ2LTYuODVMMCAzNS44MXYtMi4zek0xNSAwdjcuNUwyNy45OSAxNUgyOHYtMi4zMWgtLjAxTDE3IDYuMzVWMGgtMnptMCA0OXYtOGwxMi45OS03LjVIMjh2Mi4zMWgtLjAxTDE3IDQyLjE1VjQ5aC0yeiIvPjwvZz48L3N2Zz4="),
+    linear-gradient(158deg, var(--navy) 0%, var(--navy-deep) 100%);
+  background-size: 46px auto, cover;
+  border-bottom: 1.5px solid var(--gold);
+}
+.vc-head .vc-brand {
+  position: absolute;
+  top: 22px;
+  left: 26px;
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 10px;
   color: #fff;
 }
-.vc-head .vc-mark { width: 34px; height: 34px; flex-shrink: 0; color: #fff; }
-.vc-head .vc-mark svg { width: 34px; height: 34px; display: block; }
-.vc-brand { font-family: 'Sora', sans-serif; font-weight: 800; font-size: 1.16rem; letter-spacing: .01em; line-height: 1.1; }
-.vc-brand small {
+.vc-head .vc-mark { width: 26px; height: 26px; color: #fff; }
+.vc-head .vc-mark svg { width: 26px; height: 26px; display: block; }
+.vc-wordmark { font-family: var(--sans); font-weight: 800; font-size: 1.02rem; letter-spacing: .02em; line-height: 1; }
+.vc-wordmark small {
   display: block;
-  font-size: .53rem;
-  letter-spacing: .18em;
-  color: var(--gold);
+  font-size: .5rem;
+  letter-spacing: .22em;
+  color: var(--gold-soft);
   font-weight: 700;
-  margin-top: 3px;
+  margin-top: 4px;
 }
 
-/* ---- Identity ---- */
-.vc-identity { padding: 30px 28px 24px; text-align: center; }
+/* ---------- Hexagon avatar, overlapping the seam ---------- */
+.vc-identity { position: relative; padding: 0 30px 26px; text-align: center; }
 
-.vc-monogram {
-  width: 92px; height: 92px;
-  margin: 0 auto 18px;
-  border-radius: 50%;
+.vc-avatar {
+  position: relative;
+  width: 104px;
+  height: 116px;
+  margin: -58px auto 16px;
+  filter: drop-shadow(0 16px 26px rgba(7, 27, 51, .34));
+}
+.vc-avatar .ring {   /* gold hexagon behind = the frame */
+  position: absolute;
+  inset: 0;
+  background: var(--gold);
+  clip-path: var(--hex);
+}
+.vc-avatar .face {   /* cream hexagon on top */
+  position: absolute;
+  inset: 4px;
+  background: linear-gradient(160deg, #fff 0%, var(--bg-tint) 100%);
+  clip-path: var(--hex);
   display: grid;
   place-items: center;
-  background: var(--bg-tint);
-  border: 2px solid var(--gold);
-  box-shadow: 0 10px 26px -14px rgba(14, 42, 76, .5);
+}
+.vc-avatar .initials {
   font-family: var(--serif);
   font-weight: 700;
-  font-size: 2.1rem;
+  font-size: 2.35rem;
   color: var(--navy);
-  letter-spacing: .02em;
+  letter-spacing: .01em;
+  line-height: 1;
 }
 
 .vc-name {
   font-family: var(--serif);
   font-weight: 700;
-  font-size: clamp(1.8rem, 6vw, 2.15rem);
-  line-height: 1.12;
+  font-size: clamp(1.9rem, 6.2vw, 2.25rem);
+  line-height: 1.08;
   color: var(--ink);
-  margin-bottom: 12px;
+  margin-bottom: 14px;
 }
 
+/* Title set between two short gold rules — stationery, not a pill. */
 .vc-title {
-  display: inline-flex;
+  display: flex;
   align-items: center;
-  font-family: 'Sora', sans-serif;
+  justify-content: center;
+  gap: 12px;
+  font-family: var(--sans);
   font-weight: 700;
-  font-size: .68rem;
-  letter-spacing: .16em;
+  font-size: .66rem;
+  letter-spacing: .19em;
   text-transform: uppercase;
   color: var(--gold-deep);
-  background: var(--gold-soft);
-  border: 1px solid rgba(182, 137, 63, .28);
-  padding: 7px 15px;
-  border-radius: 100px;
 }
+.vc-title::before,
+.vc-title::after {
+  content: "";
+  width: 26px;
+  height: 1.5px;
+  background: linear-gradient(90deg, transparent, var(--gold));
+}
+.vc-title::after { background: linear-gradient(90deg, var(--gold), transparent); }
 
 .vc-tagline {
   margin-top: 14px;
-  font-size: .87rem;
+  font-size: .88rem;
   color: var(--slate);
 }
 
-/* ---- Contact rows ---- */
-.vc-rows { padding: 4px 16px 8px; }
+/* ---------- Contact rows ---------- */
+.vc-rows { padding: 6px 20px 6px; }
 
 .vc-row {
   display: flex;
   align-items: center;
-  gap: 14px;
-  padding: 13px 12px;
-  border-radius: 14px;
+  gap: 15px;
+  padding: 14px 10px;
   color: inherit;
   text-decoration: none;
-  transition: background .15s ease, transform .15s ease;
+  border-radius: 14px;
+  transition: background .16s ease, transform .12s ease;
 }
 .vc-row + .vc-row { border-top: 1px solid var(--bg-tint); }
 .vc-row:hover { background: var(--bg-tint); }
 .vc-row:active { transform: scale(.99); }
 
+/* Hexagonal icon tile — the hive motif, again. */
 .vc-ico {
-  width: 38px; height: 38px;
+  position: relative;
+  width: 42px;
+  height: 46px;
   flex-shrink: 0;
-  border-radius: 11px;
   display: grid;
   place-items: center;
-  background: var(--bg);
   color: var(--navy);
-  border: 1px solid var(--line);
 }
-.vc-ico svg { width: 18px; height: 18px; display: block; }
-.vc-ico.is-wa { background: rgba(37, 211, 102, .12); border-color: rgba(37, 211, 102, .35); color: #1EA855; }
+.vc-ico::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: var(--gold-soft);
+  clip-path: var(--hex);
+}
+.vc-ico svg { position: relative; width: 18px; height: 18px; display: block; }
+.vc-ico.is-wa { color: #1EA855; }
+.vc-ico.is-wa::before { background: rgba(37, 211, 102, .16); }
 
-.vc-row .vc-text { min-width: 0; }
+.vc-row .vc-text { min-width: 0; text-align: left; }
 .vc-row .vc-label {
   display: block;
-  font-family: 'Sora', sans-serif;
-  font-size: .58rem;
+  font-family: var(--sans);
+  font-size: .56rem;
   font-weight: 700;
-  letter-spacing: .15em;
+  letter-spacing: .16em;
   text-transform: uppercase;
-  color: var(--gold);
-  margin-bottom: 1px;
+  color: var(--gold-deep);
+  margin-bottom: 2px;
 }
 .vc-row .vc-value {
   display: block;
-  font-size: .95rem;
+  font-size: .97rem;
   font-weight: 500;
   color: var(--ink);
   overflow: hidden;
@@ -187,32 +211,32 @@
   white-space: nowrap;
 }
 
-/* ---- Actions ---- */
-.vc-actions { padding: 14px 24px 4px; display: flex; flex-direction: column; gap: 10px; }
+/* ---------- Actions ---------- */
+.vc-actions { padding: 16px 24px 6px; display: flex; flex-direction: column; gap: 11px; }
 
 .vc-btn {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 9px;
-  font-family: 'Sora', sans-serif;
+  gap: 10px;
+  font-family: var(--sans);
   font-weight: 700;
-  font-size: .97rem;
-  padding: 15px 22px;
+  font-size: .98rem;
+  padding: 16px 22px;
   border-radius: 14px;
   border: none;
   cursor: pointer;
   text-decoration: none;
-  transition: transform .15s ease, box-shadow .15s ease, background .15s ease;
+  transition: transform .15s ease, box-shadow .15s ease, background .15s ease, border-color .15s ease, color .15s ease;
 }
 .vc-btn svg { width: 18px; height: 18px; }
 
 .vc-btn-primary {
   background: var(--navy);
   color: #fff;
-  box-shadow: 0 14px 30px -12px rgba(14, 42, 76, .55);
+  box-shadow: 0 16px 32px -14px rgba(14, 42, 76, .6);
 }
-.vc-btn-primary:hover { background: #143052; transform: translateY(-2px); box-shadow: 0 18px 40px -12px rgba(14, 42, 76, .62); }
+.vc-btn-primary:hover { background: #143052; transform: translateY(-2px); box-shadow: 0 22px 44px -14px rgba(14, 42, 76, .66); }
 
 .vc-btn-ghost {
   background: #fff;
@@ -221,36 +245,45 @@
 }
 .vc-btn-ghost:hover { border-color: var(--gold); color: var(--gold-deep); transform: translateY(-2px); }
 
-/* ---- QR ---- */
+/* ---------- QR ---------- */
 .vc-qr {
-  margin: 20px 24px 8px;
-  padding: 18px;
-  background: var(--bg-tint);
+  margin: 22px 24px 6px;
+  padding: 20px;
+  background: linear-gradient(160deg, var(--bg-tint), #fff);
   border: 1px solid var(--line);
-  border-radius: 18px;
+  border-radius: 20px;
   text-align: center;
 }
 .vc-qr img {
-  width: 148px; height: 148px;
+  width: 150px; height: 150px;
   display: block;
-  margin: 0 auto 10px;
+  margin: 0 auto 12px;
   background: #fff;
-  border-radius: 10px;
-  padding: 8px;
+  border-radius: 12px;
+  padding: 9px;
   border: 1px solid var(--line);
 }
 .vc-qr .vc-qr-cap {
-  font-family: 'Sora', sans-serif;
-  font-size: .58rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--sans);
+  font-size: .57rem;
   font-weight: 700;
-  letter-spacing: .15em;
+  letter-spacing: .17em;
   text-transform: uppercase;
   color: var(--slate);
 }
+.vc-qr .vc-qr-cap::before {
+  content: "";
+  width: 9px; height: 10px;
+  background: var(--gold);
+  clip-path: var(--hex);
+}
 
-/* ---- Footer ---- */
+/* ---------- Footer ---------- */
 .vc-foot {
-  padding: 16px 24px 24px;
+  padding: 18px 24px 24px;
   text-align: center;
   font-size: .8rem;
   color: var(--slate);
@@ -258,25 +291,28 @@
 .vc-foot a { color: var(--gold-deep); font-weight: 600; text-decoration: none; }
 .vc-foot a:hover { text-decoration: underline; }
 
-/* ---- Unknown slug ---- */
+/* ---------- Unknown slug ---------- */
 .vc-missing {
-  position: relative;
-  z-index: 1;
   max-width: 420px;
   text-align: center;
   background: #fff;
   border: 1px solid var(--line);
-  border-radius: 26px;
+  border-radius: 28px;
   box-shadow: var(--shadow);
-  padding: 44px 30px;
+  padding: 46px 30px;
 }
 .vc-missing h1 { font-family: var(--serif); font-size: 1.6rem; margin-bottom: 10px; }
 .vc-missing p { color: var(--slate); margin-bottom: 22px; }
 
+/* ---------- Motion / responsive ---------- */
+@media (prefers-reduced-motion: reduce) {
+  .vc-root * { transition: none !important; }
+}
+
 @media (max-width: 380px) {
-  .vc-root { padding: 24px 14px 40px; }
-  .vc-identity { padding: 26px 20px 20px; }
-  .vc-rows { padding: 4px 10px 8px; }
-  .vc-actions { padding: 12px 18px 4px; }
-  .vc-qr { margin: 18px 18px 8px; }
+  .vc-root { padding: 26px 14px 44px; }
+  .vc-identity { padding: 0 20px 22px; }
+  .vc-rows { padding: 6px 12px; }
+  .vc-actions { padding: 14px 18px 6px; }
+  .vc-qr { margin: 20px 18px 6px; }
 }
